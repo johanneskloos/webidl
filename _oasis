@@ -1,0 +1,19 @@
+OASISFormat: 0.4
+Name:        webidl
+Version:     0.1
+Synopsis:    WebIDL parser and analyzer
+Authors:     Johannes Kloos
+License:     Apache
+Plugins:     META (0.4)
+OCamlVersion: >= 4.02.1
+AlphaFeatures: no_automatic_syntax
+
+Library "webidl"
+  Path:       .
+  BuildTools: ocamlbuild
+  Install:    true
+  XMETAEnable: true
+  XMETADescription: WebIDL parser and analyzer
+  BuildDepends: batteries, ppx_deriving.ord, ppx_deriving.eq
+  Modules:    Ast, AstParse, AstSimplify, Flatten, IdlData, Idl, Idllexer, Idlparser
+
