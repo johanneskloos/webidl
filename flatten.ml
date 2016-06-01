@@ -72,12 +72,12 @@ let build_dependencies_and_check_consistency defs =
 
 
 let merge_dictionary ({ members = parent_members }: dictionary)
-      ({ name; inherits_from; members }: dictionary) =
-  { name; inherits_from; members = parent_members @ members }
+      ({ name; inherits_from; members; user_attributes }: dictionary) =
+  { name; inherits_from; user_attributes; members = parent_members @ members }
 
 let merge_exception { consts = parent_consts; members = parent_members }
-      { name; inherits_from; consts; members; not_exposed } =
-  { name; inherits_from; not_exposed;
+      { name; inherits_from; consts; members; not_exposed; user_attributes } =
+  { name; inherits_from; not_exposed; user_attributes;
     consts = parent_consts @ consts; members = parent_members @ members }
 
 let merge_interface
@@ -88,7 +88,7 @@ let merge_interface
         legacy_callers = parent_legacy_callers; stringifier = parent_stringifier }
       { inheritance_mode; name; consts; attributes; operations; static_operations;
         constructors; special; named_properties; indexed_properties; legacy_callers;
-        not_exposed; stringifier
+        not_exposed; stringifier; user_attributes
       } = 
   let merge_properties
         { getter = parent_getter; setter = parent_setter;
@@ -100,7 +100,7 @@ let merge_interface
         deleter = def deleter parent_deleter;
         creator = def creator parent_creator }
   in
-    { inheritance_mode; name; not_exposed; special;
+    { inheritance_mode; name; not_exposed; special; user_attributes;
       consts = parent_consts @ consts;
       attributes = parent_attributes @ attributes;
       operations = parent_operations @ operations;

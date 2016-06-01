@@ -231,8 +231,12 @@ let translate_type ctx ty args = translate_type ctx args ty
 
 let translate_value ctx (x: Ast.value): value = x
 
-let translate_constant ctx (name, types, value) = 
-  { name; types = translate_type ctx types []; value = translate_value ctx value }
+let remove_nonuser ctx attrs = raise Exit
+
+let translate_constant ctx (name, types, value) attrs = 
+  { name; types = translate_type ctx types [];
+    value = translate_value ctx value;
+    user_attributes = remove_nonuser ctx attrs }
 
 let translate_attribute ctx (name, inherited, read_only, types) attrs =
   let (lenient_this, attrs) =
@@ -252,7 +256,10 @@ let translate_attribute ctx (name, inherited, read_only, types) attrs =
                   if access <> ReadOnly then warn ctx "Inconsistent access mode";
                   Unforgable)
     ] attrs
-  in { name; types = translate_type ctx types attrs; lenient_this; inherited; access }
+  in { name; lenient_this; inherited; access;
+       types = translate_type ctx types attrs;
+       user_attributes = remove_nonuser ctx attrs
+  }
 
 let translate_argument ctx (((name, types, mode, default): Ast.argument_data), attrs) =
   let kind = match mode with
@@ -266,7 +273,10 @@ let translate_argument ctx (((name, types, mode, default): Ast.argument_data), a
         match default with
           | None -> Optional
           | Some default -> Default default
-  in { name; types = translate_type ctx types attrs ; kind }
+  in { name; kind;
+       types = translate_type ctx types attrs;
+       user_attributes = remove_nonuser ctx attrs
+  }
 let translate_arguments ctx args = List.map (translate_argument ctx) args
 
 let translate_return_type ctx return attrs =
@@ -277,12 +287,16 @@ let translate_regular_operation ctx (name: string option) return args attrs: ope
   match name with Some name -> 
     { name;
       return = translate_return_type ctx return attrs;
-      args = translate_arguments ctx args }
+      args = translate_arguments ctx args;
+      user_attributes = remove_nonuser ctx attrs
+    }
     | None -> fail ctx "Unnamed regular operation"
 
 let translate_legacy_caller ctx name return args attrs =
   ( { return = translate_return_type ctx return attrs;
-      args = translate_arguments ctx args },
+      args = translate_arguments ctx args;
+      user_attributes = remove_nonuser ctx attrs
+  },
     match name with
       | Some _ -> [ translate_regular_operation ctx name return args attrs ]
       | None  -> [])
@@ -290,47 +304,48 @@ let translate_legacy_caller ctx name return args attrs =
 let translate_special
       ctx qualifier name return (args: Ast.argument_list)
       attrs indexed_properties named_properties =
+  let translate_one return attrs = 
+    Some { types = translate_return_type ctx return attrs;
+           user_attributes = remove_nonuser ctx attrs }
+  and translate_two arg argattrs return retattrs =
+    Some ({ types = translate_return_type ctx return retattrs;
+            user_attributes = remove_nonuser ctx retattrs },
+          { types = translate_type ctx arg argattrs;
+            user_attributes = remove_nonuser ctx argattrs })
+  in
   ((match qualifier, List.map (fun ((_, ty, _, _), attrs) -> (ty, attrs)) args with
     | Ast.SpecGetter, [ (Ast.TypeLeaf Ast.UnsignedLongType, argattrs) ] ->
         if argattrs <> [] then warn ctx "Attributes given for index argument";
-        ({ indexed_properties with getter = Some (translate_return_type ctx return attrs) },
+        ({ indexed_properties with getter = translate_one return attrs },
          named_properties)
     | Ast.SpecGetter, [ (Ast.TypeLeaf Ast.DOMStringType, argattrs) ] ->
         if argattrs <> [] then warn ctx "Attributes given for index argument";
         (indexed_properties,
-         { named_properties with getter = Some (translate_return_type ctx return attrs) })
+         { named_properties with getter = translate_one return attrs })
     | Ast.SpecDeleter, [ (Ast.TypeLeaf Ast.UnsignedLongType, argattrs) ] ->
         if argattrs <> [] then warn ctx "Attributes given for index argument";
-        ({ indexed_properties with deleter = Some (translate_return_type ctx return attrs) },
+        ({ indexed_properties with deleter = translate_one return attrs },
          named_properties)
     | Ast.SpecDeleter, [ (Ast.TypeLeaf Ast.DOMStringType, argattrs) ] ->
         if argattrs <> [] then warn ctx "Attributes given for index argument";
         (indexed_properties,
-         { named_properties with deleter = Some (translate_return_type ctx return attrs) })
-    | Ast.SpecSetter, [ (Ast.TypeLeaf Ast.UnsignedLongType, argattrs);
-                        (arg, argattrs') ] ->
-        if argattrs <> [] then warn ctx "Attributes given for index argument";
-        ({ indexed_properties with setter =
-             Some (translate_return_type ctx return attrs, translate_type ctx arg argattrs') },
+         { named_properties with deleter = translate_one return attrs })
+    | Ast.SpecSetter, [ (Ast.TypeLeaf Ast.UnsignedLongType, retattrs);
+                        (arg, argattrs) ] ->
+        ({ indexed_properties with setter = translate_two arg argattrs return retattrs },
          named_properties)
-    | Ast.SpecSetter, [ (Ast.TypeLeaf Ast.DOMStringType, argattrs);
-                        (arg, argattrs') ] ->
-        if argattrs <> [] then warn ctx "Attributes given for index argument";
+    | Ast.SpecSetter, [ (Ast.TypeLeaf Ast.DOMStringType, retattrs);
+                        (arg, argattrs) ] ->
         (indexed_properties,
-         { named_properties with setter =
-             Some (translate_return_type ctx return attrs, translate_type ctx arg argattrs') })
-    | Ast.SpecCreator, [ (Ast.TypeLeaf Ast.UnsignedLongType, argattrs);
-                         (arg, argattrs') ] ->
-        if argattrs <> [] then warn ctx "Attributes given for index argument";
-        ({ indexed_properties with creator =
-             Some (translate_return_type ctx return attrs, translate_type ctx arg argattrs') },
+         { named_properties with setter = translate_two arg argattrs return retattrs })
+    | Ast.SpecCreator, [ (Ast.TypeLeaf Ast.UnsignedLongType, retattrs);
+                         (arg, argattrs) ] ->
+        ({ indexed_properties with creator = translate_two arg argattrs return retattrs },
          named_properties)
-    | Ast.SpecCreator, [ (Ast.TypeLeaf Ast.DOMStringType, argattrs);
-                         (arg, argattrs') ] ->
-        if argattrs <> [] then warn ctx "Attributes given for index argument";
+    | Ast.SpecCreator, [ (Ast.TypeLeaf Ast.DOMStringType, retattrs);
+                         (arg, argattrs) ] ->
         (indexed_properties,
-         { named_properties with creator =
-             Some (translate_return_type ctx return attrs, translate_type ctx arg argattrs') })
+         { named_properties with creator = translate_two arg argattrs return retattrs })
     | _, _ -> fail ctx "Unparsable special operation"),
    match name with
      | Some _ ->
@@ -362,7 +377,8 @@ let translate_operation ctx name return arguments qualifiers attrs interface =
     | _ ->
         fail ctx "Invalid qualifer combination given"
 
-let translate_stringifer_empty ctx attrs = InternalStringifer (parse_string_args ctx attrs)
+let translate_stringifer_empty ctx attrs =
+  InternalStringifer (parse_string_args ctx attrs, remove_nonuser ctx attrs)
 let translate_stringifier_operation ctx name return args attrs =
   begin if return <> Ast.TypeLeaf Ast.DOMStringType then
     warn ctx "Stringifier does not return string"
@@ -370,12 +386,12 @@ let translate_stringifier_operation ctx name return args attrs =
   begin if args <> [] then
     warn ctx "Stringifier takes arguments"
   end;
-  ( InternalStringifer (parse_string_args ctx attrs),
+  ( InternalStringifer (parse_string_args ctx attrs, remove_nonuser ctx attrs),
     match name with
       | Some _ -> [ translate_regular_operation ctx name return args attrs ]
       | None -> [])
 let translate_stringifier_attribute ctx name inherited readonly types attrs =
-  ( AttributeStringifier (name, parse_string_args ctx attrs),
+  ( AttributeStringifier (name, parse_string_args ctx attrs, remove_nonuser ctx attrs),
     translate_attribute ctx (name, inherited, readonly, types) attrs)
 
 let translate_member ctx interface (member, attrs) =
@@ -400,12 +416,14 @@ let translate_member ctx interface (member, attrs) =
         let attr = translate_attribute ctx (name, inherited, readonly, types) attrs in
           { interface with attributes = attr :: interface.attributes }
     | Ast.ConstMember (name, types, value) ->
-        begin if attrs = [] then warn ctx "Constant with attribute" end;
-        let value = translate_constant ctx (name, types, value) in
+        let value = translate_constant ctx (name, types, value) attrs in
           { interface with consts = value :: interface.consts }
 
 let parse_constructor ctx name constructors (args: Ast.argument_list option) =
-  { name; args = translate_arguments ctx (BatOption.default [] args)} :: constructors
+  { name;
+    args = translate_arguments ctx (BatOption.default [] args);
+    user_attributes = remove_nonuser ctx []
+  } :: constructors
 
 let translate_interface ctx (name, mode, members) attrs =
   let (inheritance_mode, attrs) =
@@ -455,27 +473,36 @@ let translate_interface ctx (name, mode, members) attrs =
     named_properties = empty_properties;
     indexed_properties = empty_properties;
     legacy_callers = [];
-    stringifier = NoStringifier
+    stringifier = NoStringifier;
+    user_attributes = remove_nonuser ctx attrs
   }
   in List.fold_left (translate_member ctx) init members
 
 
 let translate_dictionary_entry ctx ((name, types, default_value), attrs) =
-  { name; default_value = BatOption.map (translate_value ctx) default_value;
-    types = translate_type ctx types (limit_arguments ctx ["Clamp"; "EnforceRange"] attrs) }
-let translate_dictionary ctx (name, mode, members) =
+  { name;
+    default_value = BatOption.map (translate_value ctx) default_value;
+    types = translate_type ctx types (limit_arguments ctx ["Clamp"; "EnforceRange"] attrs);
+    user_attributes = remove_nonuser ctx attrs
+  }
+let translate_dictionary ctx (name, mode, members) attrs =
   let inherits_from = match mode with
     | Ast.ModeTop -> None
     | Ast.ModeInherit from -> Some from
     | Ast.ModePartial -> fail ctx "At this point, no partial dictionaries should remain"
-  in { name; inherits_from; members = List.map (translate_dictionary_entry ctx) members }
+  in { name; inherits_from;
+       members = List.map (translate_dictionary_entry ctx) members;
+       user_attributes = remove_nonuser ctx attrs
+  }
 
 let translate_exception_member ctx name types attrs =
-  { name; types = translate_type ctx types (limit_arguments ctx [] attrs) }
+  { name;
+    types = translate_type ctx types (limit_arguments ctx [] attrs);
+    user_attributes = remove_nonuser ctx attrs
+  }
 let translate_exception_member' ctx exc (member, attrs) = match member with
   | Ast.ExConstMember const ->
-      if attrs <> [] then warn ctx "Attributes given on constant";
-      { exc with consts = translate_constant ctx const :: exc.consts }
+      { exc with consts = translate_constant ctx const attrs :: exc.consts }
   | Ast.ExValueMember (name, types) ->
       { exc with
             members = translate_exception_member ctx name types attrs :: exc.members }
@@ -483,11 +510,16 @@ let translate_exception ctx (name, inherits_from, members) attrs =
   let not_exposed =
     parse_all_arguments ctx false [ArgPlain ("NoInterfaceObject", fun _ -> true)] attrs
   in List.fold_left (translate_exception_member' ctx)
-       { name; inherits_from; not_exposed; consts = []; members = [] } members
+       { name; inherits_from;
+         not_exposed;
+         consts = [];
+         members = [];
+         user_attributes = remove_nonuser ctx attrs
+       } members
 
 let translate_enumeration ctx (name, values) attrs =
   if attrs <> [] then warn ctx "Attributes given on enumeration";
-  { name; values }
+  { name; values; user_attributes = remove_nonuser ctx attrs }
 
 let translate_callback ctx (name, return, args) attrs =
   let treat_non_callable_as_null = parse_all_arguments ctx false
@@ -495,7 +527,10 @@ let translate_callback ctx (name, return, args) attrs =
                                      attrs
   in let ({ name; return; args }: operation) =
     translate_regular_operation ctx name return args []
-  in { name; return; args; treat_non_callable_as_null }
+  in {
+    name; return; args; treat_non_callable_as_null;
+    user_attributes = remove_nonuser ctx attrs
+  }
 
 let translate_callback_interface ctx desc attrs =
   translate_interface ctx desc
@@ -522,8 +557,7 @@ let translate_definitions =
                { defs with callback_interfaces =
                    StringMap.add i.name i defs.callback_interfaces }
          | Ast.DefDictionary d ->
-             if attrs <> [] then warn () "Attributes given for dictionary";
-             let d = translate_dictionary () d in
+             let d = translate_dictionary () d attrs in
                { defs with dictionaries = StringMap.add d.name d defs.dictionaries }
          | Ast.DefImplements (lower, upper) ->
              { defs with implements = (lower, upper) :: defs.implements }
