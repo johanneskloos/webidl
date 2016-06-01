@@ -18,3 +18,8 @@ _build/
 # oasis generated files
 setup.data
 setup.log
+META
+myocamlbuild.ml
+setup.ml
+*.mllib
+*.mldylib
