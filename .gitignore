@@ -23,3 +23,6 @@ myocamlbuild.ml
 setup.ml
 *.mllib
 *.mldylib
+
+# Editor backup files
+*~
