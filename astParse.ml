@@ -231,14 +231,61 @@ let translate_type ctx ty args = translate_type ctx args ty
 
 let translate_value ctx (x: Ast.value): value = x
 
-let remove_nonuser ctx attrs = raise Exit
+type ('a, 'b) either = Left of 'a | Right of 'b
+let rec partition_map f = function
+  | [] -> ([], [])
+  | x::l -> let (ll, lr) = partition_map f l in match f x with
+      | Left y -> (y::ll, lr)
+      | Right y -> (ll, y::lr)
+
+let rec remove_nonuser ctx attrs =
+  let nonuser = [ "ArrayClass"; "Clamp"; "Constructor"; "EnforceRange";
+                  "ImplicitThis"; "LenientThis"; "NamedConstructor";
+                  "NoInterfaceObject"; "OverrideBuiltins"; "PutForwards";
+                  "Replacable"; "NamedPropertieObject"; "TreatCallableAsNull";
+                  "TreatNullAs"; "TreatUndefinedAs"; "Unforgable" ]
+  in partition_map
+    (function
+       | Ast.WithArguments (name, _, _) as attr when List.mem name nonuser ->
+           Left attr
+       | Ast.WithoutArguments (name, _) as attr when List.mem name nonuser ->
+           Left attr
+       | Ast.WithArguments (name, Some id, args) ->
+           Right (IdlData.UAArgumentsEquals (name, id, translate_arguments ctx args))
+       | Ast.WithArguments (name, None, args) ->
+           Right (IdlData.UAArguments (name, translate_arguments ctx args))
+       | Ast.WithoutArguments (name, Some id) ->
+           Right (IdlData.UAEquals (name, id))
+       | Ast.WithoutArguments (name, None) ->
+           Right (IdlData.UAPlain name))
+    attrs
+and translate_argument ctx (((name, types, mode, default): Ast.argument_data), attrs) =
+  let kind = match mode with
+    | Ast.ModeSingle ->
+        if default <> None then warn ctx "Default given for non-optional argument";
+        Single
+    | Ast.ModeMultiple ->
+        if default <> None then warn ctx "Default given for non-optional argument";
+        Multiple
+    | Ast.ModeOptional ->
+        match default with
+          | None -> Optional
+          | Some default -> Default default
+  in let (attrs, user_attributes) = remove_nonuser ctx attrs
+  in { name; kind; user_attributes;
+       types = translate_type ctx types attrs }
+and translate_arguments ctx args = List.map (translate_argument ctx) args
+
 
 let translate_constant ctx (name, types, value) attrs = 
-  { name; types = translate_type ctx types [];
-    value = translate_value ctx value;
-    user_attributes = remove_nonuser ctx attrs }
+  let (attrs, user_attributes) = remove_nonuser ctx attrs in
+    if attrs <> [] then warn ctx "Constant with extended attributes";
+  { name; user_attributes;
+    types = translate_type ctx types attrs;
+    value = translate_value ctx value }
 
 let translate_attribute ctx (name, inherited, read_only, types) attrs =
+  let (attrs, user_attributes) = remove_nonuser ctx attrs in
   let (lenient_this, attrs) =
     parse_some_arguments ctx false [
       ArgPlain ("LenientThis",
@@ -256,46 +303,27 @@ let translate_attribute ctx (name, inherited, read_only, types) attrs =
                   if access <> ReadOnly then warn ctx "Inconsistent access mode";
                   Unforgable)
     ] attrs
-  in { name; lenient_this; inherited; access;
-       types = translate_type ctx types attrs;
-       user_attributes = remove_nonuser ctx attrs
-  }
-
-let translate_argument ctx (((name, types, mode, default): Ast.argument_data), attrs) =
-  let kind = match mode with
-    | Ast.ModeSingle ->
-        if default <> None then warn ctx "Default given for non-optional argument";
-        Single
-    | Ast.ModeMultiple ->
-        if default <> None then warn ctx "Default given for non-optional argument";
-        Multiple
-    | Ast.ModeOptional ->
-        match default with
-          | None -> Optional
-          | Some default -> Default default
-  in { name; kind;
-       types = translate_type ctx types attrs;
-       user_attributes = remove_nonuser ctx attrs
-  }
-let translate_arguments ctx args = List.map (translate_argument ctx) args
+  in { name; lenient_this; inherited; access; user_attributes;
+       types = translate_type ctx types attrs }
 
 let translate_return_type ctx return attrs =
   translate_type ctx return
     (limit_arguments ctx ["TreatNullAs"; "TreadUndefinedAs"] attrs)
 
 let translate_regular_operation ctx (name: string option) return args attrs: operation = 
+  let (attrs, user_attributes) = remove_nonuser ctx attrs in
   match name with Some name -> 
-    { name;
+    { name; user_attributes;
       return = translate_return_type ctx return attrs;
-      args = translate_arguments ctx args;
-      user_attributes = remove_nonuser ctx attrs
+      args = translate_arguments ctx args
     }
     | None -> fail ctx "Unnamed regular operation"
 
 let translate_legacy_caller ctx name return args attrs =
+  let (attrs, user_attributes) = remove_nonuser ctx attrs in
   ( { return = translate_return_type ctx return attrs;
       args = translate_arguments ctx args;
-      user_attributes = remove_nonuser ctx attrs
+      user_attributes
   },
     match name with
       | Some _ -> [ translate_regular_operation ctx name return args attrs ]
@@ -304,14 +332,14 @@ let translate_legacy_caller ctx name return args attrs =
 let translate_special
       ctx qualifier name return (args: Ast.argument_list)
       attrs indexed_properties named_properties =
-  let translate_one return attrs = 
-    Some { types = translate_return_type ctx return attrs;
-           user_attributes = remove_nonuser ctx attrs }
+  let translate_attributed_type translate ctx ty attrs =
+    let (attrs, user_attributes) = remove_nonuser ctx attrs in
+      { types = translate ctx ty attrs; user_attributes }
+  in let translate_one return attrs = 
+    Some (translate_attributed_type translate_return_type ctx return attrs)
   and translate_two arg argattrs return retattrs =
-    Some ({ types = translate_return_type ctx return retattrs;
-            user_attributes = remove_nonuser ctx retattrs },
-          { types = translate_type ctx arg argattrs;
-            user_attributes = remove_nonuser ctx argattrs })
+    Some (translate_attributed_type translate_return_type ctx return retattrs,
+          translate_attributed_type translate_type ctx arg argattrs)
   in
   ((match qualifier, List.map (fun ((_, ty, _, _), attrs) -> (ty, attrs)) args with
     | Ast.SpecGetter, [ (Ast.TypeLeaf Ast.UnsignedLongType, argattrs) ] ->
@@ -378,7 +406,8 @@ let translate_operation ctx name return arguments qualifiers attrs interface =
         fail ctx "Invalid qualifer combination given"
 
 let translate_stringifer_empty ctx attrs =
-  InternalStringifer (parse_string_args ctx attrs, remove_nonuser ctx attrs)
+  let (attrs, user_attributes) = remove_nonuser ctx attrs in
+  InternalStringifer (parse_string_args ctx attrs, user_attributes)
 let translate_stringifier_operation ctx name return args attrs =
   begin if return <> Ast.TypeLeaf Ast.DOMStringType then
     warn ctx "Stringifier does not return string"
@@ -386,12 +415,14 @@ let translate_stringifier_operation ctx name return args attrs =
   begin if args <> [] then
     warn ctx "Stringifier takes arguments"
   end;
-  ( InternalStringifer (parse_string_args ctx attrs, remove_nonuser ctx attrs),
+  let (attrs, user_attributes) = remove_nonuser ctx attrs in
+  ( InternalStringifer (parse_string_args ctx attrs, user_attributes),
     match name with
       | Some _ -> [ translate_regular_operation ctx name return args attrs ]
       | None -> [])
 let translate_stringifier_attribute ctx name inherited readonly types attrs =
-  ( AttributeStringifier (name, parse_string_args ctx attrs, remove_nonuser ctx attrs),
+  let (attrs, user_attributes) = remove_nonuser ctx attrs in
+  ( AttributeStringifier (name, parse_string_args ctx attrs, user_attributes),
     translate_attribute ctx (name, inherited, readonly, types) attrs)
 
 let translate_member ctx interface (member, attrs) =
@@ -420,9 +451,9 @@ let translate_member ctx interface (member, attrs) =
           { interface with consts = value :: interface.consts }
 
 let parse_constructor ctx name constructors (args: Ast.argument_list option) =
-  { name;
-    args = translate_arguments ctx (BatOption.default [] args);
-    user_attributes = remove_nonuser ctx []
+  let (attrs, user_attributes) = remove_nonuser ctx [] in
+  { name; user_attributes;
+    args = translate_arguments ctx (BatOption.default [] args)
   } :: constructors
 
 let translate_interface ctx (name, mode, members) attrs =
@@ -466,39 +497,39 @@ let translate_interface ctx (name, mode, members) attrs =
         ArgPlain ("NoInterfaceObject",
                   (fun (special, _) -> (special, true)))
       ] attrs
+  in let (attrs, user_attributes) = remove_nonuser ctx attrs
   in let init = {
-    inheritance_mode; name; special; not_exposed; constructors;
+    inheritance_mode; name; special; not_exposed; constructors; user_attributes;
     consts = []; attributes = []; operations = [];
     static_operations = [];
     named_properties = empty_properties;
     indexed_properties = empty_properties;
     legacy_callers = [];
-    stringifier = NoStringifier;
-    user_attributes = remove_nonuser ctx attrs
+    stringifier = NoStringifier
   }
   in List.fold_left (translate_member ctx) init members
 
 
 let translate_dictionary_entry ctx ((name, types, default_value), attrs) =
-  { name;
+  let (attrs, user_attributes) = remove_nonuser ctx attrs in
+  { name; user_attributes;
     default_value = BatOption.map (translate_value ctx) default_value;
-    types = translate_type ctx types (limit_arguments ctx ["Clamp"; "EnforceRange"] attrs);
-    user_attributes = remove_nonuser ctx attrs
+    types = translate_type ctx types (limit_arguments ctx ["Clamp"; "EnforceRange"] attrs)
   }
 let translate_dictionary ctx (name, mode, members) attrs =
   let inherits_from = match mode with
     | Ast.ModeTop -> None
     | Ast.ModeInherit from -> Some from
     | Ast.ModePartial -> fail ctx "At this point, no partial dictionaries should remain"
-  in { name; inherits_from;
-       members = List.map (translate_dictionary_entry ctx) members;
-       user_attributes = remove_nonuser ctx attrs
+  in let (attrs, user_attributes) = remove_nonuser ctx attrs
+  in { name; inherits_from; user_attributes;
+       members = List.map (translate_dictionary_entry ctx) members
   }
 
 let translate_exception_member ctx name types attrs =
-  { name;
-    types = translate_type ctx types (limit_arguments ctx [] attrs);
-    user_attributes = remove_nonuser ctx attrs
+  let (attrs, user_attributes) = remove_nonuser ctx attrs in
+  { name; user_attributes;
+    types = translate_type ctx types (limit_arguments ctx [] attrs)
   }
 let translate_exception_member' ctx exc (member, attrs) = match member with
   | Ast.ExConstMember const ->
@@ -507,30 +538,28 @@ let translate_exception_member' ctx exc (member, attrs) = match member with
       { exc with
             members = translate_exception_member ctx name types attrs :: exc.members }
 let translate_exception ctx (name, inherits_from, members) attrs =
-  let not_exposed =
+  let (attrs, user_attributes) = remove_nonuser ctx attrs
+  in let not_exposed =
     parse_all_arguments ctx false [ArgPlain ("NoInterfaceObject", fun _ -> true)] attrs
   in List.fold_left (translate_exception_member' ctx)
-       { name; inherits_from;
-         not_exposed;
+       { name; inherits_from; user_attributes; not_exposed;
          consts = [];
          members = [];
-         user_attributes = remove_nonuser ctx attrs
        } members
 
 let translate_enumeration ctx (name, values) attrs =
+  let (attrs, user_attributes) = remove_nonuser ctx attrs in
   if attrs <> [] then warn ctx "Attributes given on enumeration";
-  { name; values; user_attributes = remove_nonuser ctx attrs }
+  { name; values; user_attributes }
 
 let translate_callback ctx (name, return, args) attrs =
+  let (attrs, user_attributes) = remove_nonuser ctx attrs in
   let treat_non_callable_as_null = parse_all_arguments ctx false
                                      [ArgPlain ("TreatNonCallableAsNull", fun _ -> true)]
                                      attrs
   in let ({ name; return; args }: operation) =
     translate_regular_operation ctx name return args []
-  in {
-    name; return; args; treat_non_callable_as_null;
-    user_attributes = remove_nonuser ctx attrs
-  }
+  in { name; return; args; treat_non_callable_as_null; user_attributes }
 
 let translate_callback_interface ctx desc attrs =
   translate_interface ctx desc
