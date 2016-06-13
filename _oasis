@@ -17,3 +17,17 @@ Library "webidl"
   BuildDepends: batteries, ppx_deriving.ord, ppx_deriving.eq, ocamlgraph, menhirLib
   Modules:    Ast, AstParse, AstSimplify, Flatten, IdlData, Webidl, Idllexer, Idlparser, Misc, IdlparserOutput, AstParseError
 
+Executable "testWebidl"
+  Path:       .
+  BuildTools: ocamlbuild
+  MainIs:     testWebidl.ml
+  Install:    false
+  BuildDepends: ppx_deriving.show, fmt, batteries, ocamlgraph, menhirLib
+
+Executable "testLexer"
+  Path:       .
+  BuildTools: ocamlbuild
+  MainIs:     testLexer.ml
+  Install:    false
+  BuildDepends: ppx_deriving.show, fmt, menhirLib
+
