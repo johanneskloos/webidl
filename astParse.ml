@@ -1,232 +1,100 @@
 open IdlData
+open AstParseError
+open AstParseExtendedAttributes
 (** Second step: Translate the AST to a nicer form *)
 
-type 'a arg_desc =
-  | ArgPlain of string * ('a -> 'a)
-  | ArgEquals of string * ('a -> string -> 'a)
-  | ArgEqualsSpecific of string * (string * ('a -> 'a)) list
-  | ArgArguments of string * ('a -> Ast.argument list -> 'a)
-  | ArgEqualsAndArguments of string * ('a -> string -> Ast.argument list -> 'a)
-  | ArgPlainOrEquals of string * ('a -> 'a) * ('a -> string -> 'a)
-  | ArgPlainOrEqualsSpecific of string * ('a -> 'a) * (string * ('a -> 'a)) list
-  | ArgArgumentsMaybeEquals of string * ('a -> string option -> Ast.argument list -> 'a)
-  | ArgMaybeArguments of string * ('a -> Ast.argument list option -> 'a)
-  | ArgMaybeArgumentsEquals of string * ('a -> string -> Ast.argument list option -> 'a)
-
-let warn ctx str = prerr_endline str
-let fail ctx str = failwith str
-
-let parse_plain ctx name f state = function
-  | Ast.WithoutArguments(name', None) when name=name' -> Some (f state)
-  | Ast.WithoutArguments(name', _) when name=name' ->
-      warn ctx "Argument given with '=value' expression it didn't expect"; Some (f state)
-  | Ast.WithArguments(name', _, _) when name=name' ->
-      warn ctx "Argument given with argument list it didn't expect"; Some (f state)
-  | _ -> None
-let parse_equals ctx name f state = function
-  | Ast.WithoutArguments(name', None) when name=name' ->
-      fail ctx "Argument given without expected '=value' expression"
-  | Ast.WithoutArguments(name', Some id) when name=name' -> Some (f state id)
-  | Ast.WithArguments(name', None, _) when name=name' ->
-      fail ctx "Argument given without expected '=value' expression, but unexpected arglist"
-  | Ast.WithArguments(name', Some id, _) when name=name' ->
-      warn ctx "Argument given with argument list it didn't expect"; Some (f state id)
-  | _ -> None
-let parse_equals_specific ctx name fs state = function
-  | Ast.WithoutArguments(name', Some id) when name=name' ->
-      begin try
-        Some (List.assoc id fs state)
-      with Not_found ->
-        fail ctx ("Argument given with unknown equality " ^ id)
-      end
-  | Ast.WithArguments(name', None, _) when name=name' ->
-      fail ctx "Argument given without expected '=value' expression, but unexpected arglist"
-  | Ast.WithArguments(name', Some id, _) when name=name' ->
-      warn ctx "Argument given with argument list it didn't expect";
-      begin try
-        Some (List.assoc id fs state)
-      with Not_found ->
-        fail ctx ("Argument given with unknown equality " ^ id)
-      end
-  | _ -> None
-let parse_arguments ctx name f state = function
-  | Ast.WithoutArguments(name', _) when name=name' ->
-      fail ctx "Argument given without expected argument list"
-  | Ast.WithArguments(name', None, args) -> Some (f state args)
-  | Ast.WithArguments(name', _, args) ->
-      warn ctx "Argument given with '=value' it didn't expect"; Some (f state args)
-  | _ -> None
-let parse_equals_and_arguments ctx name f state = function
-  | Ast.WithoutArguments(name', _) when name=name' ->
-      fail ctx "Argument given without expected argument list"
-  | Ast.WithArguments(name', None, _) when name=name' ->
-      fail ctx "Argument given without expected '=value' expression"
-  | Ast.WithArguments(name', Some id, args) when name=name' -> Some (f state id args)
-  | _ -> None
-let parse_plain_or_equals ctx name f fs state = function
-  | Ast.WithoutArguments(name', None) when name=name' -> Some (f state)
-  | Ast.WithoutArguments(name', Some id) when name=name' -> Some (fs state id)
-  | Ast.WithArguments(name', None, _) when name=name' ->
-      warn ctx "Argument given with argument list it didn't expect"; Some (f state)
-  | Ast.WithArguments(name', Some id, _) when name=name' ->
-      warn ctx "Argument given with argument list it didn't expect"; Some (fs state id)
-  | _ -> None
-let parse_plain_or_equals_specific ctx name f fs state = function
-  | Ast.WithoutArguments(name', None) when name=name' -> Some (f state)
-  | Ast.WithoutArguments(name', Some id) when name=name' ->
-      begin try
-        Some (List.assoc id fs state)
-      with Not_found ->
-        fail ctx ("Argument given with unknown equality " ^ id)
-      end
-  | Ast.WithArguments(name', None, _) when name=name' ->
-      warn ctx "Argument given with argument list it didn't expect"; Some (f state)
-  | Ast.WithArguments(name', Some id, _) when name=name' ->
-      warn ctx "Argument given with argument list it didn't expect";
-      begin try
-        Some (List.assoc id fs state)
-      with Not_found ->
-        fail ctx ("Argument given with unknown equality " ^ id)
-      end
-  | _ -> None
-let parse_arguments_maybe_equals ctx name f state = function
-  | Ast.WithoutArguments(name', _) when name = name' ->
-      fail ctx "Argument given without argument list"
-  | Ast.WithArguments(name', id, args) when name=name' ->
-      Some (f state id args)
-  | _ -> None
-let parse_maybe_arguments ctx name f state = function
-  | Ast.WithoutArguments(name', None) when name=name' -> Some (f state None)
-  | Ast.WithoutArguments(name', _) when name=name' ->
-      warn ctx "Argument given with '=value' it didn't expect"; Some (f state None)
-  | Ast.WithArguments(name', None, args) -> Some (f state (Some args))
-  | Ast.WithArguments(name', _, args) ->
-      warn ctx "Argument given with '=value' it didn't expect"; Some (f state (Some args))
-  | _ -> None
-let parse_maybe_arguments_equals ctx name f state = function
-  | (Ast.WithoutArguments(name', None)|Ast.WithArguments(name', None, _)) when name=name' ->
-      fail ctx "Required '=value' missing"
-  | Ast.WithoutArguments(name', Some id) when name=name' -> Some (f state id None)
-  | Ast.WithArguments(name', Some id, args) -> Some (f state id (Some args))
-  | _ -> None
-
-let parse_argument_cases ctx state = function
-  | ArgPlain (name, f) -> parse_plain ctx name f state
-  | ArgEquals (name, f) -> parse_equals ctx name f state
-  | ArgEqualsSpecific (name, f) -> parse_equals_specific ctx name f state
-  | ArgPlainOrEquals (name, f, fs) -> parse_plain_or_equals ctx name f fs state
-  | ArgPlainOrEqualsSpecific (name, f, fs) ->
-      parse_plain_or_equals_specific ctx name f fs state
-  | ArgArguments (name, f) -> parse_arguments ctx name f state
-  | ArgEqualsAndArguments (name, f) -> parse_equals_and_arguments ctx name f state
-  | ArgArgumentsMaybeEquals (name, f) -> parse_arguments_maybe_equals ctx name f state
-  | ArgMaybeArguments (name, f) -> parse_maybe_arguments ctx name f state
-  | ArgMaybeArgumentsEquals (name, f) -> parse_maybe_arguments_equals ctx name f state
-
-let parse_argument ctx state arg_desc arg =
-  let rec apply_first = function
-    | rule :: rest -> begin match parse_argument_cases ctx state rule arg with
-        | Some state' -> Some state'
-        | None -> apply_first rest
-      end
-    | [] -> None
-  in apply_first arg_desc
-
-let parse_all_arguments ctx init arg_desc =
-  List.fold_left (fun state arg -> match parse_argument ctx state arg_desc arg with
-                    | Some state' -> state'
-                    | None ->
-                        let name = match arg with
-                            Ast.WithArguments (name, _, _)
-                          | Ast.WithoutArguments (name, _) -> name
-                        in warn ctx ("Unexpected argument " ^ name); state)
-    init
-
-let parse_some_arguments ctx init arg_desc =
-  List.fold_left (fun (state, args) arg -> match parse_argument ctx state arg_desc arg with
-                    | Some state' -> (state', args)
-                    | None -> (state, arg :: args))
-    (init, [])
-let limit_arguments ctx arg_list =
-  List.filter (function
-                 | Ast.WithArguments (name, _, _)
-                 | Ast.WithoutArguments (name, _) ->
-                     if List.mem name arg_list then true else begin
-                       warn ctx ("Removed non-permissible attribute " ^ name); false
-                     end)
-let forbid_arguments ctx arg_list =
-  List.filter (function
-                 | Ast.WithArguments (name, _, _)
-                 | Ast.WithoutArguments (name, _) ->
-                     if not (List.mem name arg_list) then true else begin
-                       warn ctx ("Removed non-permissible attribute " ^ name); false
-                     end)
+let update_if_default what defvalue newvalue ctx curvalue =
+  if curvalue <> defvalue then begin
+    warn ctx "%s given more than once" what
+  end;
+  newvalue
 
 let parse_int_args ctx args =
-  parse_all_arguments ctx Modulo [
-    ArgPlain("Clamp", function
-               | Modulo -> Clamp
-               | _ -> (warn ctx "Integer behavior given more than once"; Clamp));
-    ArgPlain("EnforceRange", function
-               | Modulo -> Exception
-               | _ -> (warn ctx "Integer behavior given more than once"; Exception))
+  handle_all_known Modulo ctx [
+    xattr_plain "Clamp" (update_if_default "Integer behavior" Modulo Clamp);
+    xattr_plain "EnforceRange"  (update_if_default "Integer behavior" Modulo Exception)
   ] args
 
 let parse_string_args ctx args =
-  parse_all_arguments ctx { null_as_empty_string = false; undefined_as=Undefined } [
-    ArgEqualsSpecific("TreatNullAs", [("EmptyString",
-                                      fun state ->
-                                        if state.null_as_empty_string then
-                                          warn ctx "TreatNullAs given twice";
-                                        { state with null_as_empty_string = true })]);
-    ArgEqualsSpecific("TreadUndefinedAs", [
-      ("EmptyString", fun state ->
-         if state.undefined_as <> Undefined then warn ctx "TreatUndefinedAs given twice";
-         { state with undefined_as = EmptyString });
-      ("Null", fun state ->
-         if state.undefined_as <> Undefined then warn ctx "TreatUndefinedAs given twice";
-         { state with undefined_as = Null })
-    ])
-  ] args
+  handle_all_known
+    { null_as_empty_string = false; undefined_as=Undefined }
+    ctx
+    [
+      xattr_equals_specific "TreatNullAs" [
+        ("EmptyString", fun ({ null_as_empty_string } as state) ->
+           { state with null_as_empty_string =
+               update_if_default "Null string behavior" false true
+                 ctx null_as_empty_string })
+      ];
+      xattr_equals_specific "TreadUndefinedAs" [
+        ("EmptyString", fun ({ undefined_as } as state) ->
+           { state with undefined_as =
+               update_if_default "Undefined string behavior" Undefined EmptyString
+                 ctx undefined_as });
+        ("NullString", fun ({ undefined_as } as state) ->
+           { state with undefined_as =
+               update_if_default "Undefined string behavior" Undefined Null
+                 ctx undefined_as })
+      ]
+    ] args
 
 let translate_base_type ctx args = function
   | Ast.ShortType ->
-      IntType { length = Short; unsigned = false; out_of_range = parse_int_args ctx args }
+      let (out_of_range, user_args) = parse_int_args ctx args in
+      (IntType { length = Short; unsigned = false; out_of_range }, user_args)
   | Ast.LongType ->
-      IntType { length = Long; unsigned = false; out_of_range = parse_int_args ctx args }
+      let (out_of_range, user_args) = parse_int_args ctx args in
+      (IntType { length = Long; unsigned = false; out_of_range }, user_args)
   | Ast.LongLongType ->
-      IntType { length = LongLong; unsigned = false; out_of_range = parse_int_args ctx args }
+      let (out_of_range, user_args) = parse_int_args ctx args in
+      (IntType { length = LongLong; unsigned = false; out_of_range }, user_args)
   | Ast.UnsignedShortType ->
-      IntType { length = Short; unsigned = true; out_of_range = parse_int_args ctx args }
+      let (out_of_range, user_args) = parse_int_args ctx args in
+      (IntType { length = Short; unsigned = true; out_of_range }, user_args)
   | Ast.UnsignedLongType ->
-      IntType { length = Long; unsigned = true; out_of_range = parse_int_args ctx args }
+      let (out_of_range, user_args) = parse_int_args ctx args in
+      (IntType { length = Long; unsigned = true; out_of_range }, user_args)
   | Ast.UnsignedLongLongType ->
-      IntType { length = LongLong; unsigned = true; out_of_range = parse_int_args ctx args }
-  | Ast.FloatType -> FloatType { double = false; unrestricted = false }
-  | Ast.DoubleType -> FloatType { double = true; unrestricted = false }
-  | Ast.UnrestrictedFloatType -> FloatType { double = false; unrestricted = true }
-  | Ast.UnrestrictedDoubleType -> FloatType { double = true; unrestricted = true }
-  | Ast.DOMStringType -> DOMStringType (parse_string_args ctx args)
-  | Ast.NamedType n -> NamedType n
-  | Ast.AnyType -> AnyType
-  | Ast.VoidType -> VoidType
-  | Ast.OctetType -> OctetType
-  | Ast.ByteType -> ByteType
-  | Ast.BooleanType -> BooleanType
-  | Ast.DateType -> DateType
-  | Ast.ObjectType -> ObjectType
+      let (out_of_range, user_args) = parse_int_args ctx args in
+      (IntType { length = LongLong; unsigned = true; out_of_range }, user_args)
+  | Ast.FloatType -> (FloatType { double = false; unrestricted = false }, args)
+  | Ast.DoubleType -> (FloatType { double = true; unrestricted = false }, args)
+  | Ast.UnrestrictedFloatType -> (FloatType { double = false; unrestricted = true }, args)
+  | Ast.UnrestrictedDoubleType -> (FloatType { double = true; unrestricted = true }, args)
+  | Ast.DOMStringType ->
+      let (string_args, user_args) = parse_string_args ctx args in
+      (DOMStringType string_args, user_args)
+  | Ast.NamedType n -> (NamedType n, args)
+  | Ast.AnyType -> (AnyType, args)
+  | Ast.VoidType -> (VoidType, args)
+  | Ast.OctetType -> (OctetType, args)
+  | Ast.ByteType -> (ByteType, args)
+  | Ast.BooleanType -> (BooleanType, args)
+  | Ast.DateType -> (DateType, args)
+  | Ast.ObjectType -> (ObjectType, args)
+
+let intersect l1 l2 = List.filter (fun x -> List.mem x l1) l2
 
 let rec translate_type ctx args = function
   | Ast.TypeLeaf b -> translate_base_type ctx args b
-  | Ast.TypeUnion u -> UnionType (List.map (translate_type ctx args) u)
-  | Ast.TypeArray t -> ArrayType (translate_type ctx args t)
+  | Ast.TypeUnion u ->
+      let (types, user_attrs) = List.split (List.map (translate_type ctx args) u)
+      in ((UnionType types), List.fold_left intersect args user_attrs)
+  | Ast.TypeArray t ->
+      let (type_, user_attrs) = translate_type ctx args t in (ArrayType type_, user_attrs)
   | Ast.TypeOption t -> 
-      let (treat_undefined_as_missing, args) =
-        parse_some_arguments ctx false [
-          ArgEqualsSpecific("TreatUndefinedAs", [("Missing", fun _ -> true)])] args in
-      OptionType (treat_undefined_as_missing, translate_type ctx args t)
-  | Ast.TypeNullable t -> NullableType (translate_type ctx args t)
-  | Ast.TypeSequence t -> SequenceType (translate_type ctx args t)
+      let (treat_undefined_as_missing, remaining_attrs) =
+        handle_non_failing_known false ctx [
+          xattr_equals_specific "TreatUndefinedAs" [
+            "Missing", update_if_default "undefined handling" false true ctx
+          ]
+        ] args 
+      in let (type_, user_attrs) = translate_type ctx remaining_attrs t
+      in (OptionType(treat_undefined_as_missing, type_), user_attrs)
+  | Ast.TypeNullable t ->
+      let (type_, user_attrs) = translate_type ctx args t in (NullableType type_, user_attrs)
+  | Ast.TypeSequence t ->
+      let (type_, user_attrs) = translate_type ctx args t in (SequenceType type_, user_attrs)
 let translate_type ctx ty args = translate_type ctx args ty
 
 let translate_value ctx (x: Ast.value): value = x
@@ -238,103 +106,97 @@ let rec partition_map f = function
       | Left y -> (y::ll, lr)
       | Right y -> (ll, y::lr)
 
-let rec remove_nonuser ctx attrs =
-  let nonuser = [ "ArrayClass"; "Clamp"; "Constructor"; "EnforceRange";
-                  "ImplicitThis"; "LenientThis"; "NamedConstructor";
-                  "NoInterfaceObject"; "OverrideBuiltins"; "PutForwards";
-                  "Replacable"; "NamedPropertieObject"; "TreatCallableAsNull";
-                  "TreatNullAs"; "TreatUndefinedAs"; "Unforgable" ]
-  in partition_map
-    (function
-       | Ast.WithArguments (name, _, _) as attr when List.mem name nonuser ->
-           Left attr
-       | Ast.WithoutArguments (name, _) as attr when List.mem name nonuser ->
-           Left attr
-       | Ast.WithArguments (name, Some id, args) ->
-           Right (IdlData.UAArgumentsEquals (name, id, translate_arguments ctx args))
-       | Ast.WithArguments (name, None, args) ->
-           Right (IdlData.UAArguments (name, translate_arguments ctx args))
-       | Ast.WithoutArguments (name, Some id) ->
-           Right (IdlData.UAEquals (name, id))
-       | Ast.WithoutArguments (name, None) ->
-           Right (IdlData.UAPlain name))
+let translate_mode_and_default ctx mode default = match mode with
+  | Ast.ModeSingle ->
+      if default <> None then warn ctx "Default given for single argument";
+      Single
+  | Ast.ModeMultiple ->
+      if default <> None then warn ctx "Default given for variadic argument";
+      Multiple
+  | Ast.ModeOptional ->
+      match default with
+        | Some default -> Default default
+        | None -> Optional
+
+let rec translate_attributes ctx attrs =
+  List.map (function
+              | Ast.WithoutArguments(name, None) -> UAPlain name
+              | Ast.WithoutArguments(name, Some id) -> UAEquals (name, id)
+              | Ast.WithArguments(name, None, args) ->
+                  UAArguments (name, translate_arguments ctx args)
+              | Ast.WithArguments(name, Some id, args) ->
+                  UAArgumentsEquals (name, id, translate_arguments ctx args))
     attrs
 and translate_argument ctx (((name, types, mode, default): Ast.argument_data), attrs) =
-  let kind = match mode with
-    | Ast.ModeSingle ->
-        if default <> None then warn ctx "Default given for non-optional argument";
-        Single
-    | Ast.ModeMultiple ->
-        if default <> None then warn ctx "Default given for non-optional argument";
-        Multiple
-    | Ast.ModeOptional ->
-        match default with
-          | None -> Optional
-          | Some default -> Default default
-  in let (attrs, user_attributes) = remove_nonuser ctx attrs
-  in { name; kind; user_attributes;
-       types = translate_type ctx types attrs }
+  let ctx = CtxArg (name, ctx) in
+  let kind = translate_mode_and_default ctx mode default in
+  let (types, user_attributes) = translate_type ctx types attrs in
+    { name; kind; user_attributes = translate_attributes ctx user_attributes; types }
 and translate_arguments ctx args = List.map (translate_argument ctx) args
 
 
 let translate_constant ctx (name, types, value) attrs = 
-  let (attrs, user_attributes) = remove_nonuser ctx attrs in
-    if attrs <> [] then warn ctx "Constant with extended attributes";
-  { name; user_attributes;
-    types = translate_type ctx types attrs;
+  let (types, user_attributes) = translate_type ctx types attrs in
+  let ctx = CtxConst (name, ctx) in
+  { name; types; user_attributes = translate_attributes ctx user_attributes;
     value = translate_value ctx value }
 
 let translate_attribute ctx (name, inherited, read_only, types) attrs =
-  let (attrs, user_attributes) = remove_nonuser ctx attrs in
-  let (lenient_this, attrs) =
-    parse_some_arguments ctx false [
-      ArgPlain ("LenientThis",
-                function true -> warn ctx "LenientThis given twice"; true | false -> true)]
-      attrs
-  in let (access, attrs) =
-    parse_some_arguments ctx (if read_only then ReadOnly else ReadWrite) [
-      ArgEquals ("PutForwards", fun access name ->
-                   if access <> ReadOnly then warn ctx "Inconsistent access mode";
-                   PutForwards name);
-      ArgPlain ("Replacable", fun access ->
-                  if access <> ReadOnly then warn ctx "Inconsistent access mode";
-                  Replacable);
-      ArgPlain ("Unforgable", fun access ->
-                  if access <> ReadOnly then warn ctx "Inconsistent access mode";
-                  Unforgable)
-    ] attrs
-  in { name; lenient_this; inherited; access; user_attributes;
-       types = translate_type ctx types attrs }
+  let ctx = CtxAttr (name, ctx)
+  and update_access = update_if_default "Access mode" ReadOnly in
+  let ((lenient_this, access), attrs) =
+    handle_all_known (false, if read_only then ReadOnly else ReadWrite) ctx [
+      xattr_plain "LenientThis" (fun ctx (lenient_this, access) ->
+                                   (update_if_default "LenientThis" false true ctx
+                                      lenient_this,
+                                    access));
+      xattr_equals "PutForwards" (fun ctx (lenient_this, access) fwto ->
+                                    (lenient_this,
+                                     update_access (PutForwards fwto) ctx access));
+      xattr_plain "Replacable" (fun ctx (lenient_this, access) ->
+                                  (lenient_this, update_access Replacable ctx access));
+      xattr_plain "Unforgable" (fun ctx (lenient_this, access) ->
+                                  (lenient_this, update_access Unforgable ctx access))
+    ] attrs in
+  let (types, attrs) = translate_type ctx types attrs in
+  { name; lenient_this; inherited; access; types;
+    user_attributes = translate_attributes ctx attrs }
 
 let translate_return_type ctx return attrs =
-  translate_type ctx return
-    (limit_arguments ctx ["TreatNullAs"; "TreadUndefinedAs"] attrs)
+  let ctx = CtxRet ctx in
+    translate_type ctx return
+      (drop_bad_attributes ctx ["TreatNullAs"; "TreatUndefinedAs"] attrs)
 
 let translate_regular_operation ctx (name: string option) return args attrs: operation = 
-  let (attrs, user_attributes) = remove_nonuser ctx attrs in
-  match name with Some name -> 
-    { name; user_attributes;
-      return = translate_return_type ctx return attrs;
+  let name = match name with
+    | Some name -> name 
+    | None -> error ctx "Unnamed regular operation"; "???"
+  in
+  let ctx = CtxOp (name, ctx) in
+  let (return, attrs) = translate_return_type ctx return attrs in
+    { name; return; user_attributes = translate_attributes ctx attrs;
       args = translate_arguments ctx args
     }
-    | None -> fail ctx "Unnamed regular operation"
 
-let translate_legacy_caller ctx name return args attrs =
-  let (attrs, user_attributes) = remove_nonuser ctx attrs in
-  ( { return = translate_return_type ctx return attrs;
+
+let translate_legacy_caller ctx name return' args attrs =
+  let ctx = CtxOpLegacy(name, ctx) in
+  let (return, attrs) = translate_return_type ctx return' attrs in
+  ( { return;
       args = translate_arguments ctx args;
-      user_attributes
+      user_attributes = translate_attributes ctx attrs
   },
     match name with
-      | Some _ -> [ translate_regular_operation ctx name return args attrs ]
+      | Some _ -> [ translate_regular_operation ctx name return' args attrs ]
       | None  -> [])
 
 let translate_special
       ctx qualifier name return (args: Ast.argument_list)
       attrs indexed_properties named_properties =
+  let ctx = CtxSpecial(name, ctx) in
   let translate_attributed_type translate ctx ty attrs =
-    let (attrs, user_attributes) = remove_nonuser ctx attrs in
-      { types = translate ctx ty attrs; user_attributes }
+    let (types, attrs) = translate ctx ty attrs in
+      { types; user_attributes = translate_attributes ctx attrs }
   in let translate_one return attrs = 
     Some (translate_attributed_type translate_return_type ctx return attrs)
   and translate_two arg argattrs return retattrs =
@@ -374,7 +236,8 @@ let translate_special
                          (arg, argattrs) ] ->
         (indexed_properties,
          { named_properties with creator = translate_two arg argattrs return retattrs })
-    | _, _ -> fail ctx "Unparsable special operation"),
+    | _, _ -> error ctx "Unparsable special operation";
+              (indexed_properties, named_properties)),
    match name with
      | Some _ ->
          let args = List.map (fun ((name, ty, _, _), attrs) ->
@@ -403,26 +266,32 @@ let translate_operation ctx name return arguments qualifiers attrs interface =
           { interface with indexed_properties; named_properties;
                            operations = op @ interface.operations }
     | _ ->
-        fail ctx "Invalid qualifer combination given"
+        error ctx "Invalid qualifer combination given";
+        interface
 
 let translate_stringifer_empty ctx attrs =
-  let (attrs, user_attributes) = remove_nonuser ctx attrs in
-  InternalStringifer (parse_string_args ctx attrs, user_attributes)
+  let ctx = CtxStringifier ctx in
+  let (string_mode, attrs) = parse_string_args ctx attrs in
+  InternalStringifer (string_mode, translate_attributes ctx attrs)
+
 let translate_stringifier_operation ctx name return args attrs =
+  let ctx = CtxStringifierOperation(name, ctx) in
   begin if return <> Ast.TypeLeaf Ast.DOMStringType then
     warn ctx "Stringifier does not return string"
   end;
   begin if args <> [] then
     warn ctx "Stringifier takes arguments"
   end;
-  let (attrs, user_attributes) = remove_nonuser ctx attrs in
-  ( InternalStringifer (parse_string_args ctx attrs, user_attributes),
+  let (string_mode, attrs) = parse_string_args ctx attrs in
+  ( InternalStringifer (string_mode, translate_attributes ctx attrs),
     match name with
       | Some _ -> [ translate_regular_operation ctx name return args attrs ]
       | None -> [])
+
 let translate_stringifier_attribute ctx name inherited readonly types attrs =
-  let (attrs, user_attributes) = remove_nonuser ctx attrs in
-  ( AttributeStringifier (name, parse_string_args ctx attrs, user_attributes),
+  let ctx = CtxStringifierAttribute(name, ctx) in
+  let (string_mode, attrs) = parse_string_args ctx attrs in
+  ( AttributeStringifier (name, string_mode, translate_attributes ctx attrs),
     translate_attribute ctx (name, inherited, readonly, types) attrs)
 
 let translate_member ctx interface (member, attrs) =
@@ -451,55 +320,80 @@ let translate_member ctx interface (member, attrs) =
           { interface with consts = value :: interface.consts }
 
 let parse_constructor ctx name constructors (args: Ast.argument_list option) =
-  let (attrs, user_attributes) = remove_nonuser ctx [] in
-  { name; user_attributes;
+  let ctx = CtxConstructor(name, ctx) in
+  { name; user_attributes = [];
     args = translate_arguments ctx (BatOption.default [] args)
   } :: constructors
 
+type interface_info = {
+  is_array: bool;
+  constructors: constructor list;
+  this_implicit: bool;
+  this_lenient: bool;
+  override_builtins: bool;
+  named_properties_object: bool;
+  not_exposed: bool
+}
+
 let translate_interface ctx (name, mode, members) attrs =
-  let (inheritance_mode, attrs) =
-    let (is_array, attrs) = parse_some_arguments ctx false
-                              [ArgPlain("ArrayClass", fun _ -> true)] attrs
-    in match mode with
+  let ctx = CtxInterface(name, ctx) in
+  let ({ is_array; constructors; this_implicit; this_lenient;
+         override_builtins; named_properties_object; not_exposed }, attrs) =
+    handle_all_known
+      { is_array = false; constructors = []; not_exposed = false;
+        this_lenient = false; this_implicit = false;
+        named_properties_object = false; override_builtins = false }
+      ctx
+      [
+        xattr_plain "ArrayClass"
+          (fun ctx ({ is_array } as state) ->
+             { state with is_array =
+                 update_if_default "ArrayClass" false true ctx is_array });
+        xattr_plain "LenientThis"
+          (fun ctx ({ this_lenient } as state) ->
+             { state with this_lenient =
+                 update_if_default "LenientThis" false true ctx this_lenient });
+        xattr_plain "ImplicitThis"
+          (fun ctx ({ this_implicit } as state) ->
+             { state with this_implicit =
+                 update_if_default "ImplicitThis" false true ctx this_implicit });
+        xattr_plain "OverrideBuiltins"
+          (fun ctx ({ override_builtins } as state) ->
+             { state with override_builtins =
+                 update_if_default "OverrideBuiltins" false true ctx override_builtins });
+        xattr_plain "OverrideBuiltins"
+          (fun ctx ({ named_properties_object } as state) ->
+             { state with named_properties_object =
+                 update_if_default "OverrideBuiltins" false true ctx
+                   named_properties_object });
+        xattr_maybe_arguments "Constructor"
+          (fun ctx ({ constructors } as state) args ->
+             { state with constructors =
+                 parse_constructor ctx name constructors args });
+        xattr_equals_maybe_arguments "NamedConstructor"
+          (fun ctx ({ constructors } as state) name' args ->
+             { state with constructors =
+                 parse_constructor ctx name' constructors args });
+        xattr_plain "NoInterfaceObject"
+          (fun ctx ({ not_exposed } as state) ->
+             { state with not_exposed =
+                 update_if_default "NoInterfaceObject" false true ctx not_exposed })
+      ]
+      attrs
+  in let inheritance_mode = match mode with
     | Ast.ModePartial ->
-        fail ctx "Partial interfaces should have been resolved at this point!"
+        error ctx "Partial interfaces should have been resolved at this point!";
+        Toplevel
     | Ast.ModeInherit from ->
         if is_array then warn ctx "Trying to perform double inheritance";
-        (InheritsFrom from, attrs)
+        InheritsFrom from
     | Ast.ModeTop ->
-        ((if is_array then ArrayClass else Toplevel), attrs)
+        if is_array then ArrayClass else Toplevel
   and empty_properties = { getter = None; setter = None; deleter = None; creator = None }
-  in let (constructors, attrs) =
-    parse_some_arguments ctx [] [
-      ArgMaybeArguments ("Constructor", (parse_constructor ctx name));
-      ArgMaybeArgumentsEquals ("NamedConstructor", (fun a b -> parse_constructor ctx b a))
-    ] attrs
-  in let ((special, not_exposed), attrs) =
-    parse_some_arguments ctx
-      ({ this_lenient = false; this_implicit = false;
-         named_properties_object = false;
-         override_builtins = false }, false)
-      [
-        ArgPlain ("LenientThis",
-                  (fun (special, not_exposed) -> 
-                     ({ special with this_lenient = true }, not_exposed)));
-        ArgPlain ("ImplicitThis",
-                  (fun (special, not_exposed) -> 
-                     ({ special with this_implicit = true }, not_exposed)));
-        ArgPlain ("OverrideBuiltins",
-                  (fun (special, not_exposed) -> 
-                     ({ special with override_builtins = true },
-                      not_exposed)));
-        ArgPlain ("NamedPropertiesObject",
-                  (fun (special, not_exposed) -> 
-                     ({ special with named_properties_object = true },
-                      not_exposed)));
-        ArgPlain ("NoInterfaceObject",
-                  (fun (special, _) -> (special, true)))
-      ] attrs
-  in let (attrs, user_attributes) = remove_nonuser ctx attrs
   in let init = {
-    inheritance_mode; name; special; not_exposed; constructors; user_attributes;
+    inheritance_mode; name; not_exposed; constructors;
+    user_attributes = translate_attributes ctx attrs;
+    special = { this_lenient; this_implicit; named_properties_object; override_builtins };
     consts = []; attributes = []; operations = [];
     static_operations = [];
     named_properties = empty_properties;
@@ -511,26 +405,30 @@ let translate_interface ctx (name, mode, members) attrs =
 
 
 let translate_dictionary_entry ctx ((name, types, default_value), attrs) =
-  let (attrs, user_attributes) = remove_nonuser ctx attrs in
-  { name; user_attributes;
-    default_value = BatOption.map (translate_value ctx) default_value;
-    types = translate_type ctx types (limit_arguments ctx ["Clamp"; "EnforceRange"] attrs)
+  let ctx = CtxEntry(name, ctx) in
+  let (types, attrs) =
+    translate_type ctx types (keep_good_attributes ["Clamp"; "EnforceRange"] attrs) in
+  { name; types;
+    user_attributes = translate_attributes ctx attrs;
+    default_value = BatOption.map (translate_value ctx) default_value
   }
+
 let translate_dictionary ctx (name, mode, members) attrs =
+  let ctx = CtxDictionary(name, ctx) in
   let inherits_from = match mode with
     | Ast.ModeTop -> None
     | Ast.ModeInherit from -> Some from
-    | Ast.ModePartial -> fail ctx "At this point, no partial dictionaries should remain"
-  in let (attrs, user_attributes) = remove_nonuser ctx attrs
-  in { name; inherits_from; user_attributes;
+    | Ast.ModePartial ->
+        error ctx "At this point, no partial dictionaries should remain"; None
+  in { name; inherits_from; user_attributes = translate_attributes ctx attrs;
        members = List.map (translate_dictionary_entry ctx) members
   }
 
 let translate_exception_member ctx name types attrs =
-  let (attrs, user_attributes) = remove_nonuser ctx attrs in
-  { name; user_attributes;
-    types = translate_type ctx types (limit_arguments ctx [] attrs)
-  }
+  let ctx = CtxAttr(name, ctx) in
+  let (types, attrs) = translate_type ctx types attrs in
+  { name; types; user_attributes = translate_attributes ctx attrs }
+
 let translate_exception_member' ctx exc (member, attrs) = match member with
   | Ast.ExConstMember const ->
       { exc with consts = translate_constant ctx const attrs :: exc.consts }
@@ -538,60 +436,67 @@ let translate_exception_member' ctx exc (member, attrs) = match member with
       { exc with
             members = translate_exception_member ctx name types attrs :: exc.members }
 let translate_exception ctx (name, inherits_from, members) attrs =
-  let (attrs, user_attributes) = remove_nonuser ctx attrs
-  in let not_exposed =
-    parse_all_arguments ctx false [ArgPlain ("NoInterfaceObject", fun _ -> true)] attrs
+  let ctx = CtxException(name, ctx) in
+  let (not_exposed, attrs) =
+    handle_all_known false ctx [
+      xattr_plain "NoInterfaceObject" (update_if_default "NoInterfaceObject" false true)
+    ] attrs
   in List.fold_left (translate_exception_member' ctx)
-       { name; inherits_from; user_attributes; not_exposed;
+       { name; inherits_from; not_exposed;
+         user_attributes = translate_attributes ctx attrs;
          consts = [];
          members = [];
        } members
 
 let translate_enumeration ctx (name, values) attrs =
-  let (attrs, user_attributes) = remove_nonuser ctx attrs in
-  if attrs <> [] then warn ctx "Attributes given on enumeration";
-  { name; values; user_attributes }
+  let ctx = CtxEnumeration(name, ctx) in
+  { name; values; user_attributes = translate_attributes ctx attrs }
 
 let translate_callback ctx (name, return, args) attrs =
-  let (attrs, user_attributes) = remove_nonuser ctx attrs in
-  let treat_non_callable_as_null = parse_all_arguments ctx false
-                                     [ArgPlain ("TreatNonCallableAsNull", fun _ -> true)]
-                                     attrs
+  let ctx = CtxCallback(name, ctx) in
+  let (treat_non_callable_as_null, attrs) =
+    handle_all_known false ctx [
+      xattr_plain "TreatNonCallableAsNull"
+        (update_if_default "TreatNonCallableAsNull" false true)
+    ] attrs
   in let ({ name; return; args }: operation) =
     translate_regular_operation ctx name return args []
-  in { name; return; args; treat_non_callable_as_null; user_attributes }
+  in { name; return; args; treat_non_callable_as_null;
+       user_attributes = translate_attributes ctx attrs }
 
 let translate_callback_interface ctx desc attrs =
   translate_interface ctx desc
-    (forbid_arguments ctx ["Constructor"; "NamedConstructor"; "NoInterfaceObject"] attrs)
+    (drop_bad_attributes ctx
+       ["Constructor"; "NamedConstructor"; "NoInterfaceObject"] attrs)
 
 
 let translate_definitions =
+  let top = ctx_top () in
     List.fold_left
       (fun defs (def, attrs) -> match def with
          | Ast.DefEnum e ->
-             let e = translate_enumeration () e attrs in
+             let e = translate_enumeration top e attrs in
                { defs with enumerations = StringMap.add e.name e defs.enumerations }
          | Ast.DefException e ->
-             let e = translate_exception () e attrs in
+             let e = translate_exception top e attrs in
                { defs with exceptions = StringMap.add e.name e defs.exceptions }
          | Ast.DefCallback (name, ret, args) ->
-             let c = translate_callback () (Some name, ret, args) attrs in
+             let c = translate_callback top (Some name, ret, args) attrs in
                { defs with callbacks = StringMap.add c.name c defs.callbacks }
          | Ast.DefInterface i ->
-             let i = translate_interface () i attrs in
+             let i = translate_interface top i attrs in
                { defs with interfaces = StringMap.add i.name i defs.interfaces }
          | Ast.DefCallbackInterface i ->
-             let i = translate_interface () i attrs in
+             let i = translate_interface top i attrs in
                { defs with callback_interfaces =
                    StringMap.add i.name i defs.callback_interfaces }
          | Ast.DefDictionary d ->
-             let d = translate_dictionary () d attrs in
+             let d = translate_dictionary top d attrs in
                { defs with dictionaries = StringMap.add d.name d defs.dictionaries }
          | Ast.DefImplements (lower, upper) ->
              { defs with implements = (lower, upper) :: defs.implements }
          | Ast.DefTypedef _ ->
-             fail () "Typedef in definitions; please clean up first"
+             error top "Typedef in definitions; please clean up first"; defs
       ) { dictionaries = StringMap.empty;
           enumerations = StringMap.empty;
           interfaces = StringMap.empty;
