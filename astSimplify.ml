@@ -46,8 +46,10 @@ let build_subst_map defs =
     begin if DFS.has_cycle deps then failwith "Cyclic typedefs" end;
     let module Top = Graph.Topological.Make(G) in
     Top.fold (fun name map ->
-                StringMap.add name (substitute_named_types map
-                                   (StringMap.find name initial_subst_map)) map)
+                if StringMap.mem name initial_subst_map then
+                  StringMap.add name (substitute_named_types map
+                                        (StringMap.find name initial_subst_map)) map
+                else map (* We may get spurios named types, since typedefs may refer to other, external named types. *))
       deps StringMap.empty
 
 let resolve_typedefs defs =
