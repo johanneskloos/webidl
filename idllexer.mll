@@ -2,12 +2,7 @@
     open Lexing
     open Idlparser
 
-    let next_line lexbuf =
-        let pos = lexbuf.lex_curr_p in
-        lexbuf.lex_curr_p <-
-            { pos with
-            pos_bol = lexbuf.lex_curr_pos;
-            pos_lnum = pos.pos_lnum + 1 }
+    let next_line lexbuf = Lexing.new_line lexbuf
 }
 
 let decdigit=['0'-'9']
@@ -58,13 +53,10 @@ rule read = parse
   | "[" { LBracket }
   | "{" { LBrace }
   | "interface" { Interface }
-  | int { IntegerValue (int_of_string (Lexing.lexeme lexbuf)) }
   | "inherit" { Inherit }
   | "implements" { Implements }
-  | identifier { Identifier (Lexing.lexeme lexbuf) }
   | ">" { Gt }
   | "getter" { Getter }
-  | float { FloatValue (float_of_string (Lexing.lexeme lexbuf)) } 
   | "float" { Float }
   | "false" { False }
   | "exception" { Exception }
@@ -85,6 +77,9 @@ rule read = parse
   | "boolean" { Boolean }
   | "attribute" { Attribute }
   | "any" { Any }
+  | float { FloatValue (float_of_string (Lexing.lexeme lexbuf)) } 
+  | int { IntegerValue (int_of_string (Lexing.lexeme lexbuf)) }
+  | identifier { Identifier (Lexing.lexeme lexbuf) }
   | eof { EOF }
 and read_string buf = parse
   | '\n' { next_line lexbuf; Buffer.add_char buf '\n'; read_string buf lexbuf }
@@ -94,8 +89,9 @@ and read_string buf = parse
 and skip_comment = parse
   | '\n' { next_line lexbuf; skip_comment lexbuf }
   | "*/" { read lexbuf }
-  | '*' [^'/'] { skip_comment lexbuf }
-  | [^'*']* { skip_comment lexbuf }
+  | '*' [^'/''\n'] { skip_comment lexbuf }
+  | '*' '\n' { next_line lexbuf; skip_comment lexbuf }
+  | [^'*''\n']* { skip_comment lexbuf }
   | eof { failwith "Unterminated comment" }
 and skip_line_comment = parse
   | '\n' { next_line lexbuf; read lexbuf }
