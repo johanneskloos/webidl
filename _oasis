@@ -14,7 +14,7 @@ Library "webidl"
   Install:    true
   XMETAEnable: true
   XMETADescription: WebIDL parser and analyzer
-  BuildDepends: batteries, ppx_deriving.ord, ppx_deriving.eq, ocamlgraph, menhirLib
+  BuildDepends: batteries, ppx_deriving.ord, ppx_deriving.eq, ocamlgraph, menhirLib, batteries
   Modules:    Ast, AstParse, AstSimplify, Flatten, IdlData, Webidl, Idllexer, Idlparser, Misc, IdlparserOutput, AstParseError
 
 Executable "testWebidl"
