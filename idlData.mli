@@ -1,4 +1,8 @@
-module StringMap: BatMap.S with type key = string
+type qualified_name = string list
+val pp_qualified_name: qualified_name Fmt.t
+val compare_qualified_name: qualified_name -> qualified_name -> int
+val equal_qualified_name: qualified_name -> qualified_name -> bool
+module QNameMap: BatMap.S with type key = qualified_name
 type int_length = Short | Long | LongLong
 val pp_int_length :
   Format.formatter -> int_length -> Ppx_deriving_runtime.unit
@@ -34,7 +38,7 @@ val show_string_behavior : string_behavior -> Ppx_deriving_runtime.string
 type types =
     IntType of int_type
   | FloatType of float_type
-  | NamedType of string
+  | NamedType of string list
   | AnyType
   | VoidType
   | DOMStringType of string_behavior
@@ -79,7 +83,7 @@ val show_argument : argument -> Ppx_deriving_runtime.string
 val pp_user_attribute :
   Format.formatter -> user_attribute -> Ppx_deriving_runtime.unit
 val show_user_attribute : user_attribute -> Ppx_deriving_runtime.string
-type inheritance_mode = Toplevel | InheritsFrom of string | ArrayClass
+type inheritance_mode = Toplevel | InheritsFrom of string list | ArrayClass
 val pp_inheritance_mode :
   Format.formatter -> inheritance_mode -> Ppx_deriving_runtime.unit
 val show_inheritance_mode : inheritance_mode -> Ppx_deriving_runtime.string
@@ -158,7 +162,7 @@ val pp_stringifer_mode :
   Format.formatter -> stringifer_mode -> Ppx_deriving_runtime.unit
 val show_stringifer_mode : stringifer_mode -> Ppx_deriving_runtime.string
 type constructor = {
-  name : string;
+  name : qualified_name;
   args : argument list;
   user_attributes : user_attribute list;
 }
@@ -167,7 +171,7 @@ val pp_constructor :
 val show_constructor : constructor -> Ppx_deriving_runtime.string
 type interface = {
   inheritance_mode : inheritance_mode;
-  name : string;
+  name : qualified_name;
   consts : constant list;
   attributes : attribute list;
   operations : operation list;
@@ -193,8 +197,8 @@ val pp_dictionary_entry :
   Format.formatter -> dictionary_entry -> Ppx_deriving_runtime.unit
 val show_dictionary_entry : dictionary_entry -> Ppx_deriving_runtime.string
 type dictionary = {
-  name : string;
-  inherits_from : string option;
+  name : qualified_name;
+  inherits_from : qualified_name option;
   members : dictionary_entry list;
   user_attributes : user_attribute list;
 }
@@ -210,8 +214,8 @@ val pp_exception_member :
   Format.formatter -> exception_member -> Ppx_deriving_runtime.unit
 val show_exception_member : exception_member -> Ppx_deriving_runtime.string
 type exception_ = {
-  name : string;
-  inherits_from : string option;
+  name : qualified_name;
+  inherits_from : qualified_name option;
   consts : constant list;
   members : exception_member list;
   not_exposed : bool;
@@ -221,14 +225,14 @@ val pp_exception_ :
   Format.formatter -> exception_ -> Ppx_deriving_runtime.unit
 val show_exception_ : exception_ -> Ppx_deriving_runtime.string
 type enumerate = {
-  name : string;
+  name : qualified_name;
   values : string list;
   user_attributes : user_attribute list;
 }
 val pp_enumerate : Format.formatter -> enumerate -> Ppx_deriving_runtime.unit
 val show_enumerate : enumerate -> Ppx_deriving_runtime.string
 type callback = {
-  name : string;
+  name : qualified_name;
   return : types;
   args : argument list;
   treat_non_callable_as_null : bool;
@@ -236,15 +240,14 @@ type callback = {
 }
 val pp_callback : Format.formatter -> callback -> Ppx_deriving_runtime.unit
 val show_callback : callback -> Ppx_deriving_runtime.string
-val pp_string_map : 'a Fmt.t -> 'a StringMap.t Fmt.t
 type definitions = {
-  dictionaries : dictionary StringMap.t;
-  enumerations : enumerate StringMap.t;
-  interfaces : interface StringMap.t;
-  exceptions : exception_ StringMap.t;
-  callbacks : callback StringMap.t;
-  callback_interfaces : interface StringMap.t;
-  implements : (string * string) list;
+  dictionaries : dictionary QNameMap.t;
+  enumerations : enumerate QNameMap.t;
+  interfaces : interface QNameMap.t;
+  exceptions : exception_ QNameMap.t;
+  callbacks : callback QNameMap.t;
+  callback_interfaces : interface QNameMap.t;
+  implements : (qualified_name * qualified_name) list;
 }
 val pp_definitions :
   Format.formatter -> definitions -> Ppx_deriving_runtime.unit

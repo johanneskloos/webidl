@@ -10,7 +10,7 @@ type base_types =
   | UnrestrictedFloatType
   | UnrestrictedDoubleType
   | DOMStringType
-  | NamedType of string
+  | NamedType of string list
   | AnyType
   | VoidType
   | OctetType
@@ -74,7 +74,7 @@ type exception_member =
   | ExConstMember of const_data
   | ExValueMember of string * types
   [@@deriving show]
-type mode = ModeTop | ModePartial | ModeInherit of string
+type mode = ModeTop | ModePartial | ModeInherit of string list
   [@@deriving show]
 
 type dictionary_entry = string * types * value option
@@ -83,19 +83,19 @@ type dictionary_member = dictionary_entry * extended_attribute list
   [@@deriving show]
 type interface_member = members * extended_attribute list
   [@@deriving show]
-type dictionary_data = string * mode * dictionary_member list
+type dictionary_data = string list * mode * dictionary_member list
   [@@deriving show]
-type interface_data = string * mode * interface_member list
+type interface_data = string list * mode * interface_member list
   [@@deriving show]
-type exception_data = string * string option * (exception_member * extended_attribute list) list
+type exception_data = string list * string list option * (exception_member * extended_attribute list) list
   [@@deriving show]
-type enum_data = string * string list
+type enum_data = string list * string list
   [@@deriving show]
-type typedef_data = string * types * extended_attribute list
+type typedef_data = string list * types * extended_attribute list
   [@@deriving show]
-type callback_data = string * types * argument list
+type callback_data = string list * types * argument list
   [@@deriving show]
-type implements_data = string * string
+type implements_data = string list * string list
   [@@deriving show]
 type definitions =
     DefDictionary of dictionary_data

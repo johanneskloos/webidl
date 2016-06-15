@@ -71,12 +71,14 @@ rule read = parse
   | "creator" { Creator }
   | "const" { Const }
   | "," { Comma }
+  | "::" { DoubleColon }
   | ":" { Colon }
   | "callback" { Callback }
   | "byte" { Byte }
   | "boolean" { Boolean }
   | "attribute" { Attribute }
   | "any" { Any }
+  | "module" { Module }
   | float { FloatValue (float_of_string (Lexing.lexeme lexbuf)) } 
   | int { IntegerValue (int_of_string (Lexing.lexeme lexbuf)) }
   | identifier { Identifier (Lexing.lexeme lexbuf) }

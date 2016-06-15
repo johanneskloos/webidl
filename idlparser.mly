@@ -6,7 +6,7 @@
 %token Static Getter Setter Creator Deleter LegacyCaller Optional Ellipsis
 %token LBracket RBracket (*Other Minus Dot*) Lt Gt Question Unrestricted Any OR
 %token DOMString Sequence Object Date Boolean Byte Octet Float Double
-%token Unsigned Short Long Void Comma EOF
+%token Unsigned Short Long Void Comma EOF Module DoubleColon
 %token<int> IntegerValue
 %token<float> FloatValue
 %start<(Ast.definitions * Ast.extended_attribute list) list> main
@@ -30,7 +30,7 @@
 %type<value> default_value
 %type<exception_data> exception_
 %type<(exception_member * extended_attribute list) list> exception_members
-%type<string option> inheritance
+%type<string list option> inheritance
 %type<enum_data> enum
 %type<typedef_data> typedef
 %type<const_data> const
@@ -63,6 +63,7 @@
 %type<types -> types> type_suffix_starting_with_array
 %type<bool> null
 %type<types> return_type
+%type<string list> path
 
 %%
 main: defs=definitions EOF { defs }
@@ -89,34 +90,34 @@ callback_rest_or_interface:
     | it=interface { DefInterface it }
 interface:
     Interface id=Identifier inh=inheritance LBrace mem=interface_members RBrace Semicolon
-    { (id, (match inh with Some id -> ModeInherit id | None -> ModeTop), mem) }
+    { ([id], (match inh with Some id -> ModeInherit id | None -> ModeTop), mem) }
 partial: Partial pd=partial_definition { pd }
 partial_definition:
       pi=partial_interface { DefInterface pi }
     | pd=partial_dictionary { DefDictionary pd }
 partial_interface:
       Interface id=Identifier LBrace mem=interface_members RBrace Semicolon
-      { (id, ModePartial, mem) }
+      { ([id], ModePartial, mem) }
 interface_members: mem=list(interface_single_member) { mem }
 interface_single_member: attr=extended_attribute_list mem=interface_member { (mem, attr) }
 interface_member: const=const { ConstMember const } | attr=attribute_or_operation { attr }
 dictionary: Dictionary id=Identifier inh=inheritance LBrace mem=dictionary_members RBrace Semicolon
-    { (id, (match inh with Some id -> ModeInherit id | None -> ModeTop), mem) }
+    { ([id], (match inh with Some id -> ModeInherit id | None -> ModeTop), mem) }
 dictionary_members: res=list(single_dictionary_member) { res }
 single_dictionary_member: attr=extended_attribute_list mem=dictionary_member { (mem, attr) }
 dictionary_member: ty=type_ id=Identifier def=default Semicolon { (id, ty, def) }
 partial_dictionary: Dictionary id=Identifier LBrace mem=dictionary_members RBrace Semicolon
-      { (id, ModePartial, mem) }
+      { ([id], ModePartial, mem) }
 default: res=option(Equals value=default_value { value }) { res }
 default_value: value=const_value { value } | str=String { StringValue str }
 exception_: Exception id=Identifier inh=inheritance LBrace mem=exception_members RBrace Semicolon
-      { (id, inh, mem) }
+      { ([id], inh, mem) }
 exception_members: res=list(attr=extended_attribute_list mem=exception_member { (mem, attr) }) { res }
-inheritance: res=option(Colon id=Identifier { id }) { res }
-enum: Enum id=Identifier LBrace fields=separated_nonempty_list(Comma, String) RBrace Semicolon { (id, fields) }
-callback_rest: id=Identifier Equals ty=return_type LPar arg=argument_list RPar Semicolon { (id, ty, arg) }
-typedef: Typedef attrs=extended_attribute_list ty=type_ id=Identifier Semicolon { (id, ty, attrs) }
-implements_statement: id1=Identifier Implements id2=Identifier Semicolon { (id1, id2) }
+inheritance: res=option(Colon id=path { id }) { res }
+enum: Enum id=Identifier LBrace fields=separated_nonempty_list(Comma, String) RBrace Semicolon { ([id], fields) }
+callback_rest: id=Identifier Equals ty=return_type LPar arg=argument_list RPar Semicolon { ([id], ty, arg) }
+typedef: Typedef attrs=extended_attribute_list ty=type_ id=Identifier Semicolon { ([id], ty, attrs) }
+implements_statement: id1=path Implements id2=path Semicolon { (id1, id2) }
 const: Const ty=const_type id=Identifier Equals value=const_value Semicolon { (id, ty, value) }
 const_value:
       True { BoolValue true }
@@ -206,7 +207,7 @@ union_member_type:
 non_any_type:
     ty=primitive_type suff=type_suffix { suff (TypeLeaf ty) }
     | DOMString suff=type_suffix { suff (TypeLeaf DOMStringType) }
-    | id=Identifier suff=type_suffix { suff (TypeLeaf (NamedType id)) }
+    | id=path suff=type_suffix { suff (TypeLeaf (NamedType id)) }
     | Sequence Lt ty=type_ Gt null=null
       { if null then TypeNullable (TypeSequence ty) else TypeSequence ty }
     | Object suff=type_suffix { suff (TypeLeaf ObjectType) }
@@ -215,7 +216,7 @@ non_any_type:
 const_type:
       ty=primitive_type null=null
       { if null then TypeNullable (TypeLeaf ty) else (TypeLeaf ty) }
-    | id=Identifier null=null
+    | id=path null=null
       { if null then TypeNullable (TypeLeaf (NamedType id)) else TypeLeaf (NamedType id) }
 primitive_type:
       ty=unsigned_integer_type { ty }
@@ -258,3 +259,4 @@ extended_attribute_ident: id=Identifier Equals id2=Identifier { WithoutArguments
 extended_attribute_named_arg_list:
     id=Identifier Equals id2=Identifier LPar args=argument_list RPar
     { WithArguments (id, Some id2, args) }
+path: path=separated_nonempty_list(DoubleColon, id=Identifier {id}) {path}

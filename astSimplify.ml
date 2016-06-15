@@ -2,13 +2,13 @@ open Ast
 (** First step: Resolve partials and typedefs. *)                     
 (* For typedef ordering *)
 module Vertex = struct
-  type t = string
-  let equal = BatString.equal
-  let compare = String.compare
-  let hash: string -> int = Hashtbl.hash
+  type t = string list
+  let equal: string list -> string list -> bool = (=)
+  let compare l1 l2 = BatEnum.compare BatString.compare (BatList.enum l1) (BatList.enum l2)
+  let hash: t -> int = Hashtbl.hash
 end
 module G = Graph.Imperative.Digraph.Concrete(Vertex)
-module StringMap = BatMap.Make(BatString)
+module StringListMap = BatMap.Make(Vertex)
 
 let rec iter_type_names f = function
   | TypeLeaf (NamedType n) -> f n
@@ -16,16 +16,17 @@ let rec iter_type_names f = function
   | TypeUnion l -> List.iter (iter_type_names f) l
   | TypeArray t | TypeOption t | TypeNullable t | TypeSequence t -> iter_type_names f t
 
-let collect_typedef_dependencies depgraph (name, def, _) =
+let collect_typedef_dependencies depgraph ((name: string list), def, _) =
   iter_type_names (fun name' -> G.add_edge depgraph name' name) def
-let collect_dependencies defs =
+
+let collect_dependencies (defs: Ast.typedef_data list) =
   let depgraph = G.create () in
   List.iter (collect_typedef_dependencies depgraph) defs;
   depgraph
 
 let rec substitute_named_types substmap = function
   | TypeLeaf (NamedType n) ->
-      BatOption.default (TypeLeaf (NamedType n)) (StringMap.Exceptionless.find n substmap)
+      BatOption.default (TypeLeaf (NamedType n)) (StringListMap.Exceptionless.find n substmap)
   | TypeLeaf _ as t -> t
   | TypeUnion l -> TypeUnion (List.map (substitute_named_types substmap) l)
   | TypeArray t -> TypeArray (substitute_named_types substmap t)
@@ -41,16 +42,16 @@ let build_subst_map defs =
   let initial_subst_map =
     List.fold_left (fun map (name, types, attrs) ->
                       if attrs <> [] then failwith "typedef with attrs not handled";
-                      StringMap.add name types map) StringMap.empty defs
+                      StringListMap.add name types map) StringListMap.empty defs
   in let module DFS = Graph.Traverse.Dfs(G) in
     begin if DFS.has_cycle deps then failwith "Cyclic typedefs" end;
     let module Top = Graph.Topological.Make(G) in
     Top.fold (fun name map ->
-                if StringMap.mem name initial_subst_map then
-                  StringMap.add name (substitute_named_types map
-                                        (StringMap.find name initial_subst_map)) map
+                if StringListMap.mem name initial_subst_map then
+                  StringListMap.add name (substitute_named_types map
+                                        (StringListMap.find name initial_subst_map)) map
                 else map (* We may get spurios named types, since typedefs may refer to other, external named types. *))
-      deps StringMap.empty
+      deps StringListMap.empty
 
 let resolve_typedefs defs =
   let (typedefs, defs) =
@@ -114,7 +115,7 @@ let merge_partials defs =
     List.fold_left
       (fun id -> function
          | (DefInterface (name, mode, mem), attrs) ->
-             StringMap.modify_def (ModePartial, [], []) name
+             StringListMap.modify_def (ModePartial, [], []) name
                (fun (mode', mem', attrs') ->
                   match mode, mode' with
                     | ModePartial, _ ->
@@ -125,13 +126,13 @@ let merge_partials defs =
                     | _, ModePartial -> (mode, mem' @ mem, attrs' @ attrs)
                     | _, _ -> failwith
                                 ("Multiple non-partial definitions given for interface " ^
-                                 name)) id
-         | _ -> id) StringMap.empty defs
+                                 (BatString.join "::" name))) id
+         | _ -> id) StringListMap.empty defs
   and dictionary_defs =
     List.fold_left
       (fun dd -> function
          | (DefDictionary (name, mode, mem), attrs) ->
-             StringMap.modify_def (ModePartial, [], []) name
+             StringListMap.modify_def (ModePartial, [], []) name
                (fun (mode', mem', attrs') ->
                   match mode, mode' with
                     | ModePartial, _ ->
@@ -139,19 +140,19 @@ let merge_partials defs =
                     | _, ModePartial -> (mode, mem' @ mem, attrs' @ attrs)
                     | _, _ -> failwith
                                 ("Multiple non-partial definitions given for dictionary " ^
-                                 name)) dd
-         | _ -> dd) StringMap.empty defs
+                                 (BatString.join "::" name))) dd
+         | _ -> dd) StringListMap.empty defs
   and rest = List.filter
                (function (DefInterface _, _) | (DefDictionary _, _) -> false | _ -> true)
                defs
   in rest |>
-       StringMap.fold (fun name (mode, mem, attrs) defs ->
+       StringListMap.fold (fun name (mode, mem, attrs) defs ->
                        if mode = ModePartial then
-                         failwith("No non-partial definition given for interface " ^ name);
+                         failwith("No non-partial definition given for interface " ^ (BatString.join "::" name));
                        (DefInterface (name, mode, mem), attrs) :: defs) interface_defs |>
-       StringMap.fold (fun name (mode, mem, attrs) defs ->
+       StringListMap.fold (fun name (mode, mem, attrs) defs ->
                        if mode = ModePartial then
-                         failwith("No non-partial definition given for dictionary " ^ name);
+                         failwith("No non-partial definition given for dictionary " ^ (BatString.join "::" name));
                        (DefDictionary (name, mode, mem), attrs) :: defs) dictionary_defs
 
 let cleanup defs = merge_partials (resolve_typedefs defs)

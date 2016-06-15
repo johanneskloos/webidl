@@ -3,7 +3,7 @@ open IdlData
 module Vertex = struct
   type vtype = Interface | Dictionary | Exception [@@deriving ord, eq]
   let vtype_hash = function Interface -> 0 | Dictionary -> 1 | Exception -> 2
-  type t = string * vtype [@@deriving ord, eq]
+  type t = qualified_name * vtype [@@deriving ord, eq]
   let hash ((str, vt): t) = 3 * Hashtbl.hash str + vtype_hash vt
 end
 
@@ -12,7 +12,7 @@ module DFS = Graph.Traverse.Dfs(G)
 module Top = Graph.Topological.Make(G)
 
 let extract_inheritance get_inh =
-  StringMap.fold (fun name data inheritance -> match get_inh data with
+  QNameMap.fold (fun name data inheritance -> match get_inh data with
                     | Some inh -> (name, inh) :: inheritance
                     | None -> inheritance)
 
@@ -38,33 +38,33 @@ let build_dependencies_and_check_consistency defs =
     add_edges Dictionary diinh;
     add_edges Exception exinh;
     (* Consistency checks *)
-    StringMap.iter (fun name _ ->
-                      if StringMap.mem name defs.interfaces then
-                        failwith (name ^ " defined twice, both callback and non-callback"))
+    QNameMap.iter (fun name _ ->
+                      if QNameMap.mem name defs.interfaces then
+                        failwith (BatString.join "::" name ^ " defined twice, both callback and non-callback"))
       defs.callback_interfaces;
     List.iter (fun (name, inh) ->
-                 if StringMap.mem name defs.callback_interfaces then begin
-                   if StringMap.mem inh defs.interfaces then
-                     failwith ("Callback interface " ^ name ^
-                               " inherits from non-callback interface " ^ inh ^ "!")
-                   else if not (StringMap.mem inh defs.callback_interfaces) then
-                     failwith ("Callback interface " ^ name ^
-                               " inherits from non-existant interface " ^ inh ^ "!")
-                 end else if StringMap.mem name defs.interfaces then begin
-                   if not (StringMap.mem inh defs.interfaces ||
-                           StringMap.mem inh defs.callback_interfaces) then
-                     failwith ("Interface " ^ name ^
-                               " inherits from non-existant interface " ^ inh ^ "!")
+                 if QNameMap.mem name defs.callback_interfaces then begin
+                   if QNameMap.mem inh defs.interfaces then
+                     failwith ("Callback interface " ^ BatString.join "::" name ^
+                               " inherits from non-callback interface " ^ BatString.join "::" inh ^ "!")
+                   else if not (QNameMap.mem inh defs.callback_interfaces) then
+                     failwith ("Callback interface " ^ BatString.join "::" name ^
+                               " inherits from non-existant interface " ^ BatString.join "::" inh ^ "!")
+                 end else if QNameMap.mem name defs.interfaces then begin
+                   if not (QNameMap.mem inh defs.interfaces ||
+                           QNameMap.mem inh defs.callback_interfaces) then
+                     failwith ("Interface " ^ BatString.join "::" name ^
+                               " inherits from non-existant interface " ^ BatString.join "::" inh ^ "!")
                  end else
-                   failwith ("Interface " ^ name ^
+                   failwith ("Interface " ^ BatString.join "::" name ^
                              " mentioned in an implements clause does not exist!"))
       ifinh;
-    List.iter (fun (name, inh) -> if not (StringMap.mem inh defs.exceptions) then
-                 failwith ("Exception " ^ name ^ " inherits from non-existent exception " ^
-                           inh ^ "!")) exinh;
-    List.iter (fun (name, inh) -> if not (StringMap.mem inh defs.dictionaries) then
-                 failwith ("Dictionary " ^ name ^ " inherits from non-existent dictionary " ^
-                           inh ^ "!")) diinh;
+    List.iter (fun (name, inh) -> if not (QNameMap.mem inh defs.exceptions) then
+                 failwith ("Exception " ^ BatString.join "::" name ^ " inherits from non-existent exception " ^
+                           BatString.join "::" inh ^ "!")) exinh;
+    List.iter (fun (name, inh) -> if not (QNameMap.mem inh defs.dictionaries) then
+                 failwith ("Dictionary " ^ BatString.join "::" name ^ " inherits from non-existent dictionary " ^
+                           BatString.join "::" inh ^ "!")) diinh;
     begin if (DFS.has_cycle dep) then
       failwith "Cyclic inheritance graph!"
     end;
@@ -120,35 +120,35 @@ let flatten defs =
          match parent_type with
            | Interface ->
                let data =
-                 match StringMap.Exceptionless.find parent defs.interfaces with
+                 match QNameMap.Exceptionless.find parent defs.interfaces with
                    | Some data -> data
-                   | None -> StringMap.find parent defs.callback_interfaces
+                   | None -> QNameMap.find parent defs.callback_interfaces
                in let merge = merge_interface data
                in G.fold_succ (fun (child, child_type) defs ->
                               if child_type <> Interface then
                                 failwith "Inconsistent dependency edge";
-                              if StringMap.mem child defs.interfaces then
+                              if QNameMap.mem child defs.interfaces then
                                 { defs with interfaces =
-                                    StringMap.modify child merge defs.interfaces }
+                                    QNameMap.modify child merge defs.interfaces }
                               else
                                 { defs with callback_interfaces =
-                                    StringMap.modify child merge defs.callback_interfaces })
+                                    QNameMap.modify child merge defs.callback_interfaces })
                  deps (parent, parent_type) defs
            | Exception ->
-               let merge = merge_exception (StringMap.find parent defs.exceptions)
+               let merge = merge_exception (QNameMap.find parent defs.exceptions)
                in G.fold_succ (fun (child, child_type) defs ->
                                  if child_type <> Exception then
                                    failwith "Inconsistent dependency edge";
                                  { defs with exceptions =
-                                     StringMap.modify child merge defs.exceptions })
+                                     QNameMap.modify child merge defs.exceptions })
                     deps (parent, parent_type) defs
            | Dictionary ->
-               let merge = merge_dictionary (StringMap.find parent defs.dictionaries)
+               let merge = merge_dictionary (QNameMap.find parent defs.dictionaries)
                in G.fold_succ (fun (child, child_type) defs ->
                                  if child_type <> Dictionary then
                                    failwith "Inconsistent dependency edge";
                                  { defs with dictionaries =
-                                     StringMap.modify child merge defs.dictionaries })
+                                     QNameMap.modify child merge defs.dictionaries })
                     deps (parent, parent_type) defs)
       deps defs
 

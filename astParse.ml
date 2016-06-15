@@ -374,7 +374,9 @@ let translate_interface ctx (name, mode, members) attrs =
         xattr_equals_maybe_arguments "NamedConstructor"
           (fun ctx ({ constructors } as state) name' args ->
              { state with constructors =
-                 parse_constructor ctx name' constructors args });
+                 (* TODO check if we need to module-qualify this earlier. *)
+                 let name = BatString.nsplit name' ~by:"::" in
+                 parse_constructor ctx name constructors args });
         xattr_plain "NoInterfaceObject"
           (fun ctx ({ not_exposed } as state) ->
              { state with not_exposed =
@@ -460,8 +462,8 @@ let translate_callback ctx (name, return, args) attrs =
       xattr_plain "TreatNonCallableAsNull"
         (update_if_default "TreatNonCallableAsNull" false true)
     ] attrs
-  in let ({ name; return; args }: operation) =
-    translate_regular_operation ctx name return args []
+  in let (return, _) = translate_return_type ctx return []
+  and args = translate_arguments ctx args
   in { name; return; args; treat_non_callable_as_null;
        user_attributes = translate_attributes ctx attrs }
 
@@ -477,31 +479,33 @@ let translate_definitions =
       (fun defs (def, attrs) -> match def with
          | Ast.DefEnum e ->
              let e = translate_enumeration top e attrs in
-               { defs with enumerations = StringMap.add e.name e defs.enumerations }
+               { defs with enumerations = QNameMap.add e.name e defs.enumerations }
          | Ast.DefException e ->
              let e = translate_exception top e attrs in
-               { defs with exceptions = StringMap.add e.name e defs.exceptions }
+               { defs with exceptions = QNameMap.add e.name e defs.exceptions }
          | Ast.DefCallback (name, ret, args) ->
-             let c = translate_callback top (Some name, ret, args) attrs in
-               { defs with callbacks = StringMap.add c.name c defs.callbacks }
+             let c = translate_callback top (name, ret, args) attrs in
+               { defs with callbacks = QNameMap.add c.name c defs.callbacks }
          | Ast.DefInterface i ->
              let i = translate_interface top i attrs in
-               { defs with interfaces = StringMap.add i.name i defs.interfaces }
+               { defs with interfaces = QNameMap.add i.name i defs.interfaces }
          | Ast.DefCallbackInterface i ->
              let i = translate_interface top i attrs in
                { defs with callback_interfaces =
-                   StringMap.add i.name i defs.callback_interfaces }
+                   QNameMap.add i.name i defs.callback_interfaces }
          | Ast.DefDictionary d ->
              let d = translate_dictionary top d attrs in
-               { defs with dictionaries = StringMap.add d.name d defs.dictionaries }
+               { defs with dictionaries = QNameMap.add d.name d defs.dictionaries }
          | Ast.DefImplements (lower, upper) ->
              { defs with implements = (lower, upper) :: defs.implements }
          | Ast.DefTypedef _ ->
              error top "Typedef in definitions; please clean up first"; defs
-      ) { dictionaries = StringMap.empty;
-          enumerations = StringMap.empty;
-          interfaces = StringMap.empty;
-          exceptions = StringMap.empty;
-          callbacks = StringMap.empty;
-          callback_interfaces = StringMap.empty;
+         | Ast.DefModule _ ->
+             error top "Module in definitions; please clean up first"; defs
+      ) { dictionaries = QNameMap.empty;
+          enumerations = QNameMap.empty;
+          interfaces = QNameMap.empty;
+          exceptions = QNameMap.empty;
+          callbacks = QNameMap.empty;
+          callback_interfaces = QNameMap.empty;
           implements = [] }

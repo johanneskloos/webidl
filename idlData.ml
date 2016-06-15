@@ -1,4 +1,13 @@
-module StringMap = BatMap.Make(String)
+module QualifiedName = struct
+  type t = string list [@@deriving ord,eq]
+end
+type qualified_name = QualifiedName.t
+let compare_qualified_name = QualifiedName.compare
+let equal_qualified_name = QualifiedName.equal
+let pp_qualified_name =
+  let open Fmt in
+    hbox (list ~sep:(const string ".") string)
+module QNameMap = BatMap.Make(QualifiedName)
 
 type int_length = Short | Long | LongLong [@@deriving show]
 type out_of_range_behavior = Modulo | Clamp | Exception [@@deriving show]
@@ -16,7 +25,7 @@ type string_behavior = {
 type types =
     IntType of int_type
   | FloatType of float_type
-  | NamedType of string
+  | NamedType of string list
   | AnyType
   | VoidType
   | DOMStringType of string_behavior
@@ -45,7 +54,7 @@ and user_attribute =
   | UAArguments of string * argument list
   | UAArgumentsEquals of string * string * argument list [@@deriving show]
 
-type inheritance_mode = Toplevel | InheritsFrom of string | ArrayClass [@@deriving show]
+type inheritance_mode = Toplevel | InheritsFrom of string list | ArrayClass [@@deriving show]
 type special_handling = {
   this_lenient : bool;
   this_implicit : bool;
@@ -80,10 +89,10 @@ type stringifer_mode =
     NoStringifier
   | InternalStringifer of string_behavior * user_attribute list
   | AttributeStringifier of string * string_behavior * user_attribute list [@@deriving show]
-type constructor = { name : string; args : argument list; user_attributes: user_attribute list } [@@deriving show]
+type constructor = { name : qualified_name; args : argument list; user_attributes: user_attribute list } [@@deriving show]
 type interface = {
   inheritance_mode : inheritance_mode;
-  name : string;
+  name : qualified_name;
   consts : constant list;
   attributes : attribute list;
   operations : operation list;
@@ -104,41 +113,41 @@ type dictionary_entry = {
   user_attributes: user_attribute list
 } [@@deriving show]
 type dictionary = {
-  name : string;
-  inherits_from : string option;
+  name : qualified_name;
+  inherits_from : qualified_name option;
   members : dictionary_entry list;
   user_attributes: user_attribute list
 } [@@deriving show]
 type exception_member = { name : string; types : types; user_attributes: user_attribute list } [@@deriving show]
 type exception_ = {
-  name : string;
-  inherits_from : string option;
+  name : qualified_name;
+  inherits_from : qualified_name option;
   consts : constant list;
   members : exception_member list;
   not_exposed : bool;
   user_attributes: user_attribute list
 } [@@deriving show]
-type enumerate = { name : string; values : string list; user_attributes: user_attribute list } [@@deriving show]
+type enumerate = { name : qualified_name; values : string list; user_attributes: user_attribute list } [@@deriving show]
 type callback = {
-  name : string;
+  name : qualified_name;
   return : types;
   args : argument list;
   treat_non_callable_as_null : bool;
   user_attributes: user_attribute list
 } [@@deriving show]
-let pp_string_map pp_content =
+let pp_qualified_map pp_content =
   let kvsep = Fmt.const Fmt.string ": "
-  in let kvfmt = Fmt.pair ~sep:kvsep Fmt.string pp_content
+  in let kvfmt = Fmt.pair ~sep:kvsep pp_qualified_name pp_content
   in let boxedkvfmt = Fmt.box ~indent:2 kvfmt
-  in let fmtmap = Fmt.iter_bindings ~sep:Fmt.cut StringMap.iter boxedkvfmt
+  in let fmtmap = Fmt.iter_bindings ~sep:Fmt.cut QNameMap.iter boxedkvfmt
   in Fmt.vbox ~indent:2 fmtmap
 type definitions = {
-  dictionaries : dictionary StringMap.t [@printer pp_string_map pp_dictionary];
-  enumerations : enumerate StringMap.t [@printer pp_string_map pp_enumerate];
-  interfaces : interface StringMap.t [@printer pp_string_map pp_interface];
-  exceptions : exception_ StringMap.t [@printer pp_string_map pp_exception_];
-  callbacks : callback StringMap.t [@printer pp_string_map pp_callback];
-  callback_interfaces : interface StringMap.t [@printer pp_string_map pp_interface];
-  implements : (string * string) list;
+  dictionaries : dictionary QNameMap.t [@printer pp_qualified_map pp_dictionary];
+  enumerations : enumerate QNameMap.t [@printer pp_qualified_map pp_enumerate];
+  interfaces : interface QNameMap.t [@printer pp_qualified_map pp_interface];
+  exceptions : exception_ QNameMap.t [@printer pp_qualified_map pp_exception_];
+  callbacks : callback QNameMap.t [@printer pp_qualified_map pp_callback];
+  callback_interfaces : interface QNameMap.t [@printer pp_qualified_map pp_interface];
+  implements : (qualified_name * qualified_name) list;
 } [@@deriving show]
 
