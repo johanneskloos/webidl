@@ -65,8 +65,8 @@ let handle_one state ctx handlers xattr =
 
 let handle_non_failing_known state ctx handlers xattrs =
   List.fold_left (fun (state, unhandled) xattr ->
-                    let (handled, state') = handle_one state (ctx_push ctx) handlers xattr
-                    in if handled && check_and_merge_if_not_failed ctx then
+                    let (handled, state') = handle_one state (ctx_push_state ctx) handlers xattr
+                    in if handled && check_and_merge_state_if_not_failed ctx then
                       (state', unhandled)
                     else (state, xattr :: unhandled))
     (state, []) xattrs

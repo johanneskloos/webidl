@@ -128,7 +128,7 @@ let rec translate_attributes ctx attrs =
                   UAArgumentsEquals (name, id, translate_arguments ctx args))
     attrs
 and translate_argument ctx (((name, types, mode, default): Ast.argument_data), attrs) =
-  let ctx = CtxArg (name, ctx) in
+  let ctx = ctx_push_scope ctx "Argument %s" name in
   let kind = translate_mode_and_default ctx mode default in
   let (types, user_attributes) = translate_type ctx types attrs in
     { name; kind; user_attributes = translate_attributes ctx user_attributes; types }
@@ -137,12 +137,12 @@ and translate_arguments ctx args = List.map (translate_argument ctx) args
 
 let translate_constant ctx (name, types, value) attrs = 
   let (types, user_attributes) = translate_type ctx types attrs in
-  let ctx = CtxConst (name, ctx) in
+  let ctx = ctx_push_scope ctx "Constant %s" name in
   { name; types; user_attributes = translate_attributes ctx user_attributes;
     value = translate_value ctx value }
 
 let translate_attribute ctx (name, inherited, read_only, types) attrs =
-  let ctx = CtxAttr (name, ctx)
+  let ctx = ctx_push_scope ctx "Attribute %s" name
   and update_access = update_if_default "Access mode" ReadOnly in
   let ((lenient_this, access), attrs) =
     handle_all_known (false, if read_only then ReadOnly else ReadWrite) ctx [
@@ -163,7 +163,7 @@ let translate_attribute ctx (name, inherited, read_only, types) attrs =
     user_attributes = translate_attributes ctx attrs }
 
 let translate_return_type ctx return attrs =
-  let ctx = CtxRet ctx in
+  let ctx = ctx_push_scope ctx "Return type" in
     translate_type ctx return
       (drop_bad_attributes ctx ["TreatNullAs"; "TreatUndefinedAs"] attrs)
 
@@ -172,15 +172,16 @@ let translate_regular_operation ctx (name: string option) return args attrs: ope
     | Some name -> name 
     | None -> error ctx "Unnamed regular operation"; "???"
   in
-  let ctx = CtxOp (name, ctx) in
+  let ctx = ctx_push_scope ctx "Operation %s" name in
   let (return, attrs) = translate_return_type ctx return attrs in
     { name; return; user_attributes = translate_attributes ctx attrs;
       args = translate_arguments ctx args
     }
 
+let without_name = Fmt.const Fmt.string " (without name)"
 
 let translate_legacy_caller ctx name return' args attrs =
-  let ctx = CtxOpLegacy(name, ctx) in
+  let ctx = ctx_push_scope ctx "Legacy operation %a" (Fmt.option ~none:without_name Fmt.string) name in
   let (return, attrs) = translate_return_type ctx return' attrs in
   ( { return;
       args = translate_arguments ctx args;
@@ -193,7 +194,7 @@ let translate_legacy_caller ctx name return' args attrs =
 let translate_special
       ctx qualifier name return (args: Ast.argument_list)
       attrs indexed_properties named_properties =
-  let ctx = CtxSpecial(name, ctx) in
+  let ctx = ctx_push_scope ctx "Special operation %a" (Fmt.option ~none:without_name Fmt.string) name in
   let translate_attributed_type translate ctx ty attrs =
     let (types, attrs) = translate ctx ty attrs in
       { types; user_attributes = translate_attributes ctx attrs }
@@ -270,12 +271,12 @@ let translate_operation ctx name return arguments qualifiers attrs interface =
         interface
 
 let translate_stringifer_empty ctx attrs =
-  let ctx = CtxStringifier ctx in
+  let ctx = ctx_push_scope ctx "Anonymous stringifier" in
   let (string_mode, attrs) = parse_string_args ctx attrs in
   InternalStringifer (string_mode, translate_attributes ctx attrs)
 
 let translate_stringifier_operation ctx name return args attrs =
-  let ctx = CtxStringifierOperation(name, ctx) in
+  let ctx = ctx_push_scope ctx "Stringifier operation %a" (Fmt.option ~none:without_name Fmt.string) name in
   begin if return <> Ast.TypeLeaf Ast.DOMStringType then
     warn ctx "Stringifier does not return string"
   end;
@@ -289,7 +290,7 @@ let translate_stringifier_operation ctx name return args attrs =
       | None -> [])
 
 let translate_stringifier_attribute ctx name inherited readonly types attrs =
-  let ctx = CtxStringifierAttribute(name, ctx) in
+  let ctx = ctx_push_scope ctx "Stringifier attribute %s" name in
   let (string_mode, attrs) = parse_string_args ctx attrs in
   ( AttributeStringifier (name, string_mode, translate_attributes ctx attrs),
     translate_attribute ctx (name, inherited, readonly, types) attrs)
@@ -320,7 +321,7 @@ let translate_member ctx interface (member, attrs) =
           { interface with consts = value :: interface.consts }
 
 let parse_constructor ctx name constructors (args: Ast.argument_list option) =
-  let ctx = CtxConstructor(name, ctx) in
+  let ctx = ctx_push_scope ctx "Constructor %a" pp_qualified_name name in
   { name; user_attributes = [];
     args = translate_arguments ctx (BatOption.default [] args)
   } :: constructors
@@ -336,7 +337,7 @@ type interface_info = {
 }
 
 let translate_interface ctx (name, mode, members) attrs =
-  let ctx = CtxInterface(name, ctx) in
+  let ctx = ctx_push_scope ctx "Interface %a" pp_qualified_name name in
   let ({ is_array; constructors; this_implicit; this_lenient;
          override_builtins; named_properties_object; not_exposed }, attrs) =
     handle_all_known
@@ -405,7 +406,7 @@ let translate_interface ctx (name, mode, members) attrs =
 
 
 let translate_dictionary_entry ctx ((name, types, default_value), attrs) =
-  let ctx = CtxEntry(name, ctx) in
+  let ctx = ctx_push_scope ctx "Dictionary entry %s" name in
   let (types, attrs) =
     translate_type ctx types (keep_good_attributes ["Clamp"; "EnforceRange"] attrs) in
   { name; types;
@@ -414,7 +415,7 @@ let translate_dictionary_entry ctx ((name, types, default_value), attrs) =
   }
 
 let translate_dictionary ctx (name, mode, members) attrs =
-  let ctx = CtxDictionary(name, ctx) in
+  let ctx = ctx_push_scope ctx "Dictionary %a" pp_qualified_name name in
   let inherits_from = match mode with
     | Ast.ModeTop -> None
     | Ast.ModeInherit from -> Some from
@@ -425,7 +426,7 @@ let translate_dictionary ctx (name, mode, members) attrs =
   }
 
 let translate_exception_member ctx name types attrs =
-  let ctx = CtxAttr(name, ctx) in
+  let ctx = ctx_push_scope ctx "Exception member %s" name in
   let (types, attrs) = translate_type ctx types attrs in
   { name; types; user_attributes = translate_attributes ctx attrs }
 
@@ -436,7 +437,7 @@ let translate_exception_member' ctx exc (member, attrs) = match member with
       { exc with
             members = translate_exception_member ctx name types attrs :: exc.members }
 let translate_exception ctx (name, inherits_from, members) attrs =
-  let ctx = CtxException(name, ctx) in
+  let ctx = ctx_push_scope ctx "Exception %a" pp_qualified_name name in
   let (not_exposed, attrs) =
     handle_all_known false ctx [
       xattr_plain "NoInterfaceObject" (update_if_default "NoInterfaceObject" false true)
@@ -449,11 +450,11 @@ let translate_exception ctx (name, inherits_from, members) attrs =
        } members
 
 let translate_enumeration ctx (name, values) attrs =
-  let ctx = CtxEnumeration(name, ctx) in
+  let ctx = ctx_push_scope ctx "Enumeration %a" pp_qualified_name name in
   { name; values; user_attributes = translate_attributes ctx attrs }
 
 let translate_callback ctx (name, return, args) attrs =
-  let ctx = CtxCallback(name, ctx) in
+  let ctx = ctx_push_scope ctx "Callback %a" pp_qualified_name name in
   let (treat_non_callable_as_null, attrs) =
     handle_all_known false ctx [
       xattr_plain "TreatNonCallableAsNull"
