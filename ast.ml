@@ -106,6 +106,6 @@ type definitions =
   | DefImplements of implements_data
   | DefCallback of callback_data
   | DefCallbackInterface of interface_data
+  | DefModule of string * definition_list
   [@@deriving show]
-type definition_list = (definitions * extended_attribute list) list [@@deriving show]
-
+and definition_list = (definitions * extended_attribute list) list [@@deriving show]

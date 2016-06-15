@@ -68,7 +68,10 @@
 %%
 main: defs=definitions EOF { defs }
 definitions: defs=list(single_definition) { defs };
-single_definition: attrs=extended_attribute_list def=definition { (def, attrs) }
+single_definition: 
+      attrs=extended_attribute_list def=definition { (def, attrs) }
+    | Module modname=Identifier LBrace defs=definitions RBrace Semicolon
+      { (DefModule (modname, defs), []) }
 definition:
       res=callback_or_interface { res }
     | res=partial { res }
