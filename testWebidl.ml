@@ -6,16 +6,13 @@ let () =
       ("-f", Set flatten, "Flatten IDL file")
     ] (fun arg -> files := arg :: !files)
       "testWebidl [-f] filenames";
-    if !flatten then
-      List.iter (fun filename ->
-                   Format.printf "@[<v>%s:@ %a@ @ @]" 
-                     filename
-                     IdlData.pp_definitions (Webidl.flatten_from_file filename))
-        !files
-    else
-      List.iter (fun filename ->
-                   Format.printf "@[<v>%s:@ %a@ @ @]" 
-                     filename
-                     IdlData.pp_definitions (Webidl.parse_from_file filename))
-        !files
+    let defs =
+      if !flatten then
+        Webidl.flatten_from_files !files
+      else
+        Webidl.parse_from_files !files
+    in
+      Format.printf "@[<v>@[<h>%a:@]@ %a@ @]"
+        (Fmt.list ~sep:(Fmt.const Fmt.string ", ") Fmt.string) !files
+        IdlData.pp_definitions defs
 
