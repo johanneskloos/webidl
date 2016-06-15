@@ -33,3 +33,10 @@ Executable "testLexer"
   Install:    false
   BuildDepends: ppx_import, ppx_deriving.show, fmt, menhirLib
 
+Executable "testMarking"
+  Path:       .
+  BuildTools: ocamlbuild
+  MainIs:     testMarking.ml
+  Install:    false
+  BuildDepends: ppx_import, ppx_deriving.show, fmt, batteries, ocamlgraph, menhirLib
+
