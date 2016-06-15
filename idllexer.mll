@@ -19,10 +19,11 @@ let identifier = ['A'-'Z' 'a'-'z'] ['0'-'9' 'A'-'Z' 'a'-'z']*
 let whitespace = ['\t''\r'' ']+
 
 rule read = parse
+  | '#' identifier { skip_to_eol lexbuf }
   | '\n' { next_line lexbuf; read lexbuf }
   | whitespace { read lexbuf }
   | '/' '*' { skip_comment lexbuf }
-  | '/' '/' { skip_line_comment lexbuf }
+  | '/' '/' { skip_to_eol lexbuf }
   | "void" { Void }
   | "unsigned" { Unsigned }
   | "unrestricted" { Unrestricted }
@@ -95,7 +96,7 @@ and skip_comment = parse
   | '*' '\n' { next_line lexbuf; skip_comment lexbuf }
   | [^'*''\n']* { skip_comment lexbuf }
   | eof { failwith "Unterminated comment" }
-and skip_line_comment = parse
+and skip_to_eol = parse
   | '\n' { next_line lexbuf; read lexbuf }
   | eof { EOF }
-  | [^'\n']* { skip_line_comment lexbuf }
+  | [^'\n']* { skip_to_eol lexbuf }
