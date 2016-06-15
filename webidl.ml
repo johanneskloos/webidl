@@ -17,7 +17,7 @@ let run_parser lexbuf =
                Format.eprintf "%a: %s. Last token: %a@."
                  Misc.pp_position lexbuf.Lexing.lex_start_p
                  (try IdlparserOutput.message s with Not_found -> "no errror message found")
-                 pp_token !last_token
+                 TokenPrinter.pp_token !last_token
                  ;
                raise Idlparser.Error
          | _ -> failwith "Unexpected state in failure handler!"
