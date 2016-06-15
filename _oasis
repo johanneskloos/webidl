@@ -14,20 +14,22 @@ Library "webidl"
   Install:    true
   XMETAEnable: true
   XMETADescription: WebIDL parser and analyzer
-  BuildDepends: batteries, ppx_deriving.ord, ppx_deriving.eq, ocamlgraph, menhirLib, batteries
-  Modules:    Ast, AstParse, AstSimplify, Flatten, IdlData, Webidl, Idllexer, Idlparser, Misc, IdlparserOutput, AstParseError
+  BuildDepends: ppx_import, batteries, ppx_deriving.ord, ppx_deriving.eq,
+        ocamlgraph, menhirLib, batteries
+  Modules:    Ast, AstParse, AstSimplify, Flatten, IdlData, Webidl, Idllexer,
+        Idlparser, Misc, IdlparserOutput, AstParseError, TokenPrinter
 
 Executable "testWebidl"
   Path:       .
   BuildTools: ocamlbuild
   MainIs:     testWebidl.ml
   Install:    false
-  BuildDepends: ppx_deriving.show, fmt, batteries, ocamlgraph, menhirLib
+  BuildDepends: ppx_import, ppx_deriving.show, fmt, batteries, ocamlgraph, menhirLib
 
 Executable "testLexer"
   Path:       .
   BuildTools: ocamlbuild
   MainIs:     testLexer.ml
   Install:    false
-  BuildDepends: ppx_deriving.show, fmt, menhirLib
+  BuildDepends: ppx_import, ppx_deriving.show, fmt, menhirLib
 

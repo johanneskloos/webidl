@@ -1,64 +1,3 @@
-type token = Idlparser.token =
-  | Void
-  | Unsigned
-  | Unrestricted
-  | Typedef
-  | True
-  | Stringifier
-  | String of (string)
-  | Static
-  | Short
-  | Setter
-  | Sequence
-  | Semicolon
-  | ReadOnly
-  | RPar
-  | RBracket
-  | RBrace
-  | Question
-  | Partial
-  | Optional
-  | Octet
-  | Object
-  | OR
-  | Null
-  | Lt
-  | Long
-  | LegacyCaller
-  | LPar
-  | LBracket
-  | LBrace
-  | Interface
-  | IntegerValue of (int)
-  | Inherit
-  | Implements
-  | Identifier of (string)
-  | Gt
-  | Getter
-  | FloatValue of (float)
-  | Float
-  | False
-  | Exception
-  | Equals
-  | Enum
-  | Ellipsis
-  | EOF
-  | Double
-  | Dictionary
-  | Deleter
-  | Date
-  | DOMString
-  | Creator
-  | Const
-  | Comma
-  | Colon
-  | Callback
-  | Byte
-  | Boolean
-  | Attribute
-  | Any
-  [@@deriving show]
-
 let run_parser lexbuf =
   let module I = Idlparser.MenhirInterpreter in
     (* Stolen from CompCert *)
@@ -66,7 +5,7 @@ let run_parser lexbuf =
     match Lazy.force (I.stack checkpoint) with
       | MenhirLib.General.Nil -> 0
       | MenhirLib.General.Cons(I.Element (s, _, _, _), _) -> I.number s
-  and last_token = ref EOF
+  and last_token = ref Idlparser.EOF
   in let lexer lexbuf =
     let token = Idllexer.read lexbuf in
       last_token := token; token
