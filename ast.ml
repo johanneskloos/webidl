@@ -1,111 +1,101 @@
-type base_types =
-    ShortType
-  | LongType
-  | LongLongType
-  | UnsignedShortType
-  | UnsignedLongType
-  | UnsignedLongLongType
-  | FloatType
-  | DoubleType
-  | UnrestrictedFloatType
-  | UnrestrictedDoubleType
-  | DOMStringType
-  | NamedType of string list
-  | AnyType
-  | VoidType
-  | OctetType
-  | ByteType
-  | BooleanType
-  | DateType
-  | ObjectType
-  [@@deriving show]
+open Common
 
-type types =
-  | TypeLeaf of base_types
-  | TypeUnion of types list
-  | TypeArray of types
-  | TypeOption of types
-  | TypeNullable of types
-  | TypeSequence of types
-  [@@deriving show]
+type scoped_name = { absolute: bool; ends_in_domstring: bool; path: string list }
 
-type value =
-  | StringValue of string
-  | BoolValue of bool
-  | FloatValue of float
-  | IntValue of int
-  | NullValue
-  [@@deriving show]
+type type_ =
+  | TBoolean
+  | TByte
+  | TOctet
+  | TInt of Common.int_type
+  | TFloat of Common.float_type
+  | TString
+  | TNamed of scoped_name
+  | TSequence of type_
+  | TObject
+  | TDate
+  | TArray of type_
+  | TOptional of type_
+  | TVoid
+  | TUnion of type_ list
+  | TAny
 
+type extended_attribute =
+    { name: string; equals: string option; arguments: arguments }
+and extended_attribute_list = extended_attribute list
+and 'a with_attributes = 'a * extended_attribute_list
+and arguments = argument with_attributes list
+and argument =
+  | ArgOptional of { type_: type_; name: string; default: value option }
+  | ArgRequired of { type_: type_; name: string; multiple: bool }
+
+type const = { type_: type_; name: string; value: value }
+type exception_field = { type_: type_; name: string }
+type exception_member = EConst of const | EField of exception_field
+type operation = {
+  return_type: type_;
+  name: string option;
+  arguments: arguments;
+  raises: scoped_name list
+}
 
 type qualifier =
-    SpecLegacyCaller | SpecGetter | SpecSetter | SpecStatic | SpecCreator | SpecDeleter
-  [@@deriving show]
-type argument_mode = ModeSingle | ModeMultiple | ModeOptional
-  [@@deriving show]
+    QStatic | QGetter | QSetter | QCreator | QDeleter | QLegacyCaller | QOmittable
+type qualified_operation = qualifier option * operation
+type get_mode = GRaises of scoped_name list | GInherits
+type attribute = {
+  inherited: bool;
+  readonly: bool;
+  type_: type_;
+  name: string;
+  get: get_mode;
+  set: scoped_name list
+}
 
-type argument_data = string * types * argument_mode * value option
-  [@@deriving show]
-type argument = argument_data * extended_attribute list 
-  [@@deriving show]
-and extended_attribute = 
-    WithArguments of string * string option * argument list
-  | WithoutArguments of string * string option
-  [@@deriving show]
-type argument_list = argument list
-  [@@deriving show]
-type stringifier_operation_data = string * types * argument_list
-  [@@deriving show]
-type const_data = string * types * value
-  [@@deriving show]
-type attribute_data = string * bool * bool * types
-  [@@deriving show]
-type operation_data = string * types * argument_list * qualifier list
-  [@@deriving show]
-type members =
-    StringifierEmptyMember
-  | StringifierOperationMember of stringifier_operation_data
-  | StringifierAttributeMember of attribute_data
-  | OperationMember of operation_data
-  | AttributeMember of attribute_data
-  | ConstMember of const_data
-  [@@deriving show]
-type exception_member =
-  | ExConstMember of const_data
-  | ExValueMember of string * types
-  [@@deriving show]
-type mode = ModeTop | ModePartial | ModeInherit of string list
-  [@@deriving show]
+type stringifier = StringBare | StringAttribute of attribute | StringOperation of operation
+type attribute_or_operation =
+    Stringifier of stringifier | Attribute of attribute | Operation of qualified_operation
 
-type dictionary_entry = string * types * value option
-  [@@deriving show]
-type dictionary_member = dictionary_entry * extended_attribute list
-  [@@deriving show]
-type interface_member = members * extended_attribute list
-  [@@deriving show]
-type dictionary_data = string list * mode * dictionary_member list
-  [@@deriving show]
-type interface_data = string list * mode * interface_member list
-  [@@deriving show]
-type exception_data = string list * string list option * (exception_member * extended_attribute list) list
-  [@@deriving show]
-type enum_data = string list * string list
-  [@@deriving show]
-type typedef_data = string list * types * extended_attribute list
-  [@@deriving show]
-type callback_data = string list * types * argument list
-  [@@deriving show]
-type implements_data = string list * string list
-  [@@deriving show]
-type definitions =
-    DefDictionary of dictionary_data
-  | DefEnum of enum_data
-  | DefInterface of interface_data
-  | DefException of exception_data
-  | DefTypedef of typedef_data
-  | DefImplements of implements_data
-  | DefCallback of callback_data
-  | DefCallbackInterface of interface_data
-  | DefModule of string * definition_list
-  [@@deriving show]
-and definition_list = (definitions * extended_attribute list) list [@@deriving show]
+type implements = scoped_name * scoped_name
+
+type typedef = { name: string; type_: type_ with_attributes }
+
+type callback = { name: string; type_: type_ with_attributes; arguments: arguments }
+
+type enum = { name: string; contents: string list }
+
+type inheritance = scoped_name list
+
+type exception_members = exception_member with_attributes list
+type exception_ = { name: string; inheritance: inheritance; members: exception_members }
+
+type dictionary_member = { type_: type_; name: string; default: value option }
+type dictionary_members = dictionary_member with_attributes list
+type dictionary = { partial: bool; name: string; inheritance: inheritance; members: dictionary_members }
+
+type interface_member =
+  | IConst of const
+  | IAttributeOrOperation of attribute_or_operation
+
+type interface_members = interface_member with_attributes list
+type regular_interface =
+    { name: string; inheritance: inheritance; members: interface_members }
+type partial_interface = { name: string; members: interface_members }
+type interface =
+  | IRegular of regular_interface
+  | IPartial of partial_interface
+  | IForward of string
+
+type module_ = { name: string; definitions: definitions }
+and definition =
+  | DCallbackInterface of interface
+  | DCallback of callback
+  | DInterface of interface
+  | DDictionary of dictionary
+  | DException of exception_
+  | DEnum of enum
+  | DImplements of implements
+  | DModule of module_
+  | DTypedef of typedef
+  | DConst of const
+  | DNothing
+and definitions = definition list
