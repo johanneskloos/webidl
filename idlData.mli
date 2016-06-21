@@ -1,3 +1,4 @@
+open Common
 type qualified_name = string list
 val pp_qualified_name: qualified_name Fmt.t
 val compare_qualified_name: qualified_name -> qualified_name -> int
@@ -54,13 +55,7 @@ type types =
   | SequenceType of types
 val pp_types : Format.formatter -> types -> Ppx_deriving_runtime.unit
 val show_types : types -> Ppx_deriving_runtime.string
-type value =
-  Ast.value =
-    StringValue of string
-  | BoolValue of bool
-  | FloatValue of float
-  | IntValue of int
-  | NullValue
+type value = Common.value
 val pp_value : Format.formatter -> value -> Ppx_deriving_runtime.unit
 val show_value : value -> Ppx_deriving_runtime.string
 type argument_kind = Single | Multiple | Optional | Default of value

@@ -9,14 +9,14 @@ let pp_qualified_name =
     hbox (list ~sep:(const string ".") string)
 module QNameMap = BatMap.Make(QualifiedName)
 
-type int_length = Short | Long | LongLong [@@deriving show]
 type out_of_range_behavior = Modulo | Clamp | Exception [@@deriving show]
 type int_type = {
-  length : int_length;
+  length : Common.int_length;
   unsigned : bool;
   out_of_range : out_of_range_behavior;
 } [@@deriving show]
-type float_type = { double : bool; unrestricted : bool; } [@@deriving show]
+type float_type = Common.float_type
+let pp_float_type = Common.pp_float_type
 type undefined_transform = Undefined | Null | EmptyString [@@deriving show]
 type string_behavior = {
   null_as_empty_string : bool;
@@ -39,12 +39,8 @@ type types =
   | OptionType of bool * types
   | NullableType of types
   | SequenceType of types [@@deriving show]
-type value = Ast.value =
-  | StringValue of string
-  | BoolValue of bool
-  | FloatValue of float
-  | IntValue of int
-  | NullValue [@@deriving show]
+type value = Common.value
+let pp_value = Common.pp_value
 
 type argument_kind = Single | Multiple | Optional | Default of value [@@deriving show]
 type argument = { name : string; types : types; kind : argument_kind; user_attributes: user_attribute list } [@@deriving show]

@@ -1,4 +1,7 @@
-%{ open Ast %}
+%{
+open Ast
+open Common
+%}
 %token<string> Identifier String
 %token Callback LBrace RBrace Semicolon Partial Interface Dictionary
 %token Equals Exception Colon Enum LPar RPar Typedef Implements Const
