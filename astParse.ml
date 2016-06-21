@@ -38,6 +38,7 @@ let parse_string_args ctx args =
       ]
     ] args
 
+    (*
 let translate_base_type ctx args = function
   | Ast.ShortType ->
       let (out_of_range, user_args) = parse_int_args ctx args in
@@ -509,3 +510,5 @@ let translate_definitions =
           callbacks = QNameMap.empty;
           callback_interfaces = QNameMap.empty;
           implements = [] }
+    *)
+let translate_definitions = raise Exit

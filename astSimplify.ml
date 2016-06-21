@@ -10,6 +10,7 @@ end
 module G = Graph.Imperative.Digraph.Concrete(Vertex)
 module StringListMap = BatMap.Make(Vertex)
 
+                         (*
 let rec iter_type_names f = function
   | TypeLeaf (NamedType n) -> f n
   | TypeLeaf _ -> ()
@@ -263,10 +264,13 @@ let resolve_modules defs =
            | DefModule (name, defs) -> impl (name :: prefix) defs
       ) defs
   in impl [] defs
+  *)
 
-let cleanup defs =
+let cleanup defs = raise Exit
+                     (*
   defs
     |> resolve_modules
     |> resolve_typedefs
     |> merge_partials
 
+                      *)
