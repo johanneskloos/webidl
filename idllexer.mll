@@ -95,6 +95,7 @@ rule read = parse
   | int { IntegerValue (int_of_string (Lexing.lexeme lexbuf)) }
   | identifier { Identifier (Lexing.lexeme lexbuf) }
   | eof { EOF }
+  | _ as c { Format.eprintf "Lexer: Unexpected character `%c'@." c; exit 1 }
 and read_string buf = parse
   | '\n' { next_line lexbuf; Buffer.add_char buf '\n'; read_string buf lexbuf }
   | '"' { String (Buffer.contents buf) }
