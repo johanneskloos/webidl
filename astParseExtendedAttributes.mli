@@ -1,4 +1,4 @@
-type ctx = AstParseError.ctx
+type ctx = ContextError.ctx
 type 'a arg_handler
 val xattr_plain : string ->
   (ctx -> 'a -> 'a) -> 

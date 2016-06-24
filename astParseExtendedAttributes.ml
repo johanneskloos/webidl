@@ -1,5 +1,5 @@
-open AstParseError
-type ctx = AstParseError.ctx
+open ContextError
+type ctx = ContextError.ctx
 
 type 'a arg_handler = 'a -> ctx -> string option -> SimpleAst.arguments option -> 'a
 

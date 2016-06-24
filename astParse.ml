@@ -1,5 +1,5 @@
 open IdlData
-open AstParseError
+open ContextError
 open AstParseExtendedAttributes
 open SimpleAst
 (** Second step: Translate the AST to a nicer form *)
