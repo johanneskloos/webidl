@@ -25,6 +25,7 @@ rule read = parse
   | '/' '*' { skip_comment lexbuf }
   | '/' '/' { skip_to_eol lexbuf }
   | "void" { Void }
+  | "valuetype" { Valuetype }
   | "unsigned" { Unsigned }
   | "unrestricted" { Unrestricted }
   | "typedef" { Typedef }
@@ -34,19 +35,25 @@ rule read = parse
   | "static" { Static }
   | "short" { Short }
   | "setter" { Setter }
+  | "setraises" { SetRaises }
   | "sequence" { Sequence }
   | ";" { Semicolon }
   | "readonly" { ReadOnly }
+  | "raises" { Raises }
   | ")" { RPar }
   | "]" { RBracket }
   | "}" { RBrace }
   | "?" { Question }
   | "partial" { Partial }
   | "optional" { Optional }
+  | "omittable" { Omittable }
   | "octet" { Octet }
   | "object" { Object }
   | "or" { OR }
   | "null" { Null }
+  | "NaN" { NaN }
+  | "module" { Module }
+  | "-" { Minus }
   | "<" { Lt }
   | "long" { Long }
   | "legacycaller" { LegacyCaller }
@@ -54,16 +61,22 @@ rule read = parse
   | "[" { LBracket }
   | "{" { LBrace }
   | "interface" { Interface }
+  | "inherits" { Inherits }
   | "inherit" { Inherit }
+  | "Infinity" { Infinity }
+  | "in" { In }
+  | "inout" { InOut }
   | "implements" { Implements }
   | ">" { Gt }
   | "getter" { Getter }
+  | "getraises" { GetRaises }
   | "float" { Float }
   | "false" { False }
   | "exception" { Exception }
   | "=" { Equals }
   | "enum" { Enum }
   | "..." { Ellipsis }
+  | "::" { DoubleColon }
   | "double" { Double }
   | "dictionary" { Dictionary }
   | "deleter" { Deleter }
@@ -72,14 +85,12 @@ rule read = parse
   | "creator" { Creator }
   | "const" { Const }
   | "," { Comma }
-  | "::" { DoubleColon }
   | ":" { Colon }
   | "callback" { Callback }
   | "byte" { Byte }
   | "boolean" { Boolean }
   | "attribute" { Attribute }
   | "any" { Any }
-  | "module" { Module }
   | float { FloatValue (float_of_string (Lexing.lexeme lexbuf)) } 
   | int { IntegerValue (int_of_string (Lexing.lexeme lexbuf)) }
   | identifier { Identifier (Lexing.lexeme lexbuf) }
