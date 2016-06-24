@@ -1,276 +1,459 @@
-open Ast
-(** First step: Resolve partials and typedefs. *)                     
-(* For typedef ordering *)
+open SimpleAst
+(** First step: Resolve modules, partials and typedefs. *)                     
+module ScopedName = struct
+  type t = scoped_name = NamePath of string list | NameBuiltin of string
+        [@@deriving ord,eq,show]
+end
+module ScopedNameMap = BatMap.Make(ScopedName)
+
+(* Step 1: Resolve modules and split out partials and typedefs. *)
+type module_resolution = {
+  mr_definitions: definition list;
+  mr_typedefs: type_ with_attributes ScopedNameMap.t;
+  mr_partial_interface: interface list ScopedNameMap.t;
+  mr_partial_dictionary: dictionary list ScopedNameMap.t
+}
+
+let translate_name prefix name =
+  if name = "DOMString" then
+    (* Crazy stuff may happen here. FIXME: Do this properly. *)
+    NameBuiltin "DOMString"
+  else
+      NamePath (name :: prefix)
+
+let translate_scoped_name prefix { Ast.absolute; Ast.ends_in_domstring; Ast.path } =
+  if ends_in_domstring then
+    NameBuiltin "DOMString"
+  else if absolute then
+    NamePath path
+  else
+    NamePath (path @ prefix)
+
+let rec translate_type prefix = function
+  | Ast.TSequence t -> TSequence (translate_type prefix t)
+  | Ast.TArray t -> TArray (translate_type prefix t)
+  | Ast.TOptional t -> TOptional (translate_type prefix t)
+  | Ast.TUnion t -> TUnion (List.map (translate_type prefix) t)
+  | Ast.TNamed t -> TNamed (translate_scoped_name prefix t)
+  | Ast.TBoolean -> TBoolean
+  | Ast.TByte -> TByte
+  | Ast.TString -> TString
+  | Ast.TObject -> TObject
+  | Ast.TDate -> TDate
+  | Ast.TVoid -> TVoid
+  | Ast.TAny -> TAny
+  | Ast.TOctet -> TOctet
+  | Ast.TInt it -> TInt it
+  | Ast.TFloat ft -> TFloat ft
+
+let translate_global_const prefix mr { Ast.type_; Ast.name; Ast.value } =
+  let co: global_const = 
+    { type_ = translate_type prefix type_;
+      name = translate_name prefix name;
+      value }
+  in { mr with mr_definitions = DConst co :: mr.mr_definitions }
+
+let translate_const prefix { Ast.type_; Ast.name; Ast.value }: const =
+  { type_ = translate_type prefix type_;
+    name; value }
+
+let translate_get prefix = function
+  | Ast.GRaises exc -> GRaises (List.map (translate_scoped_name prefix) exc)
+  | Ast.GInherits -> GInherits
+
+let translate_attribute prefix
+      { Ast.inherited; Ast.readonly; Ast.type_; Ast.name; Ast.get; Ast.set } =
+  { inherited; readonly; name;
+    type_ = translate_type prefix type_;
+    get = translate_get prefix get;
+    set = List.map (translate_scoped_name prefix) set }
+
+let rec translate_arguments prefix args =
+  List.map (translate_with_attributes_inner translate_argument prefix) args
+and translate_argument prefix =
+  let open Ast in function
+  | ArgOptional { type_; name; default } ->
+      SimpleAst.ArgOptional { type_ = translate_type prefix type_; name; default }
+  | ArgRequired { type_; name; multiple } ->
+      SimpleAst.ArgRequired { type_ = translate_type prefix type_; name; multiple }
+and translate_with_attributes_inner
+        (translate_first: string list -> 'a -> 'b) prefix
+        ((first, attr): 'a * Ast.extended_attribute_list):
+                               'b * extended_attribute_list =
+    (translate_first prefix first, translate_extended_attribute_list prefix attr)
+and translate_extended_attribute_list prefix attrs =
+  List.map (translate_extended_attribute prefix) attrs
+and translate_extended_attribute prefix { Ast.name; Ast.equals; Ast.arguments } =
+  { name; equals; arguments = BatOption.map (translate_arguments prefix) arguments }
+
+let translate_with_attributes translate_first prefix (first, attr) =
+  (translate_first prefix first, translate_extended_attribute_list prefix attr)
+
+let translate_operation prefix { Ast.return_type; Ast.name; Ast.arguments; Ast.raises } =
+  { return_type = translate_type prefix return_type;
+    name;
+    arguments = translate_arguments prefix arguments;
+    raises = List.map (translate_scoped_name prefix) raises }
+
+let translate_interface_member prefix = function
+  | Ast.IConst c -> IConst (translate_const prefix c)
+  | Ast.IAttributeOrOperation (Ast.Attribute a) ->
+      IAttribute (translate_attribute prefix a)
+  | Ast.IAttributeOrOperation (Ast.Operation (None, o)) ->
+      IOperation (translate_operation prefix o)
+  | Ast.IAttributeOrOperation (Ast.Operation (Some q, o)) ->
+      ISpecialOperation (q, translate_operation prefix o)
+  | Ast.IAttributeOrOperation (Ast.Stringifier (Ast.StringBare)) ->
+      IStringifier StringBare
+  | Ast.IAttributeOrOperation (Ast.Stringifier (Ast.StringAttribute a)) ->
+      IStringifier (StringAttribute (translate_attribute prefix a))
+  | Ast.IAttributeOrOperation (Ast.Stringifier (Ast.StringOperation o)) ->
+      IStringifier (StringOperation (translate_operation prefix o))
+
+let translate_inheritance prefix names = List.map (translate_scoped_name prefix) names
+
+let translate_regular_interface_impl prefix
+      ({ Ast.name; Ast.inheritance; Ast.members }: Ast.regular_interface): interface =
+  { name = translate_name prefix name;
+    inheritance = translate_inheritance prefix inheritance;
+    members =
+      List.map (translate_with_attributes translate_interface_member prefix) members }
+
+let translate_callback_interface prefix ({ mr_definitions } as mr) it attr =
+  let it' = translate_regular_interface_impl prefix it
+  and attr' = translate_extended_attribute_list prefix attr in
+    { mr with mr_definitions = DCallbackInterface (it', attr') :: mr_definitions }
+
+let translate_regular_interface prefix ({ mr_definitions } as mr) it attr =
+  let it' = translate_regular_interface_impl prefix it
+  and attr' = translate_extended_attribute_list prefix attr in
+    { mr with mr_definitions = DInterface (it', attr') :: mr_definitions }
+
+let translate_forward_interface prefix ({ mr_partial_interface } as mr) name attr =
+  if attr <> [] then
+    prerr_endline "Attributes given for interface forward definition";
+  let full_name = translate_name prefix name in
+  if ScopedNameMap.mem full_name mr_partial_interface then
+    mr
+  else
+    { mr with mr_partial_interface = ScopedNameMap.add full_name [] mr_partial_interface }
+
+let translate_partial_interface_impl
+      prefix ({ Ast.name; Ast.members }: Ast.partial_interface) =
+  translate_regular_interface_impl prefix
+    { Ast.name; Ast.members; Ast.inheritance = [] }
+
+let translate_partial_interface prefix ({ mr_partial_interface } as mr)
+      (it: Ast.partial_interface) attr =
+  if attr <> [] then
+    prerr_endline "Attribute sgiven for partial interface definition";
+  let full_name = translate_name prefix it.Ast.name in
+    { mr with mr_partial_interface =
+        ScopedNameMap.modify_def [] full_name
+          (fun defs -> translate_partial_interface_impl prefix it :: defs)
+          mr_partial_interface }
+
+let translate_dictionary_member prefix { Ast.type_; Ast.name; Ast.default } =
+  { type_ = translate_type prefix type_;
+    name; default }
+
+let translate_dictionary prefix mr
+      { Ast.partial; Ast.name; Ast.inheritance; Ast.members } attr =
+  let di': dictionary =
+    { name = translate_name prefix name;
+      inheritance = translate_inheritance prefix inheritance;
+      members = List.map (translate_with_attributes translate_dictionary_member prefix)
+                  members }
+  and attr' = translate_extended_attribute_list prefix attr
+  in if partial then begin
+    if attr' <> [] then
+      prerr_endline "Non-empty attributes for a partial interface";
+    { mr with mr_partial_dictionary = ScopedNameMap.modify_def [] di'.name
+                                        (fun dis -> di' :: dis) mr.mr_partial_dictionary }
+  end else
+    { mr with mr_definitions = DDictionary (di', attr') :: mr.mr_definitions }
+
+let translate_callback prefix mr { Ast.name; Ast.type_; Ast.arguments } attr =
+  let cb =
+    { name = translate_name prefix name;
+      type_ = translate_with_attributes translate_type prefix type_;
+      arguments = translate_arguments prefix arguments }
+  and attr' = translate_extended_attribute_list prefix attr
+  in { mr with mr_definitions = DCallback (cb, attr') :: mr.mr_definitions }
+
+let translate_exception_member prefix = function
+  | Ast.EConst const -> EConst (translate_const prefix const)
+  | Ast.EField { Ast.type_; Ast.name } ->
+      EField { name; type_ = translate_type prefix type_ }
+
+let translate_exception prefix mr
+      ({ Ast.name; Ast.inheritance; Ast.members }: Ast.exception_) attr =
+  let ex: exception_ =
+    { name = translate_name prefix name;
+      inheritance = translate_inheritance prefix inheritance;
+      members =
+        List.map (translate_with_attributes translate_exception_member prefix) members }
+  and attr' = translate_extended_attribute_list prefix attr
+  in { mr with mr_definitions = DException (ex, attr') :: mr.mr_definitions }
+
+let translate_enum prefix mr { Ast.name; Ast.contents } attr =
+  { mr with mr_definitions =
+      DEnum ({ name = translate_name prefix name; contents },
+             translate_extended_attribute_list prefix attr) :: mr.mr_definitions }
+
+let translate_implements prefix mr (l, r) =
+  { mr with mr_definitions =
+      DImplements (translate_scoped_name prefix l, translate_scoped_name prefix r) ::
+            mr.mr_definitions }
+
+let translate_typedef prefix mr ({ Ast.name; Ast.type_ }: Ast.typedef) =
+  let full_name = translate_name prefix name in
+    if ScopedNameMap.mem full_name mr.mr_typedefs then
+      failwith "Type name given twice"
+    else
+      { mr with mr_typedefs =
+          ScopedNameMap.add full_name
+            (translate_with_attributes translate_type prefix type_) mr.mr_typedefs }
+
+let rec step1_translate_one prefix mr = function
+  | Ast.DCallbackInterface (Ast.IRegular it, attr) ->
+      translate_callback_interface prefix mr it attr
+  | Ast.DCallbackInterface _ ->
+      failwith "Impossible: Callback interface is not a regular interface"
+  | Ast.DCallback (cb, attr) -> translate_callback prefix mr cb attr
+  | Ast.DInterface (Ast.IRegular it, attr) ->
+      translate_regular_interface prefix mr it attr
+  | Ast.DInterface (Ast.IForward name, attr) ->
+      translate_forward_interface prefix mr name attr
+  | Ast.DInterface (Ast.IPartial it, attr) ->
+      translate_partial_interface prefix mr it attr
+  | Ast.DDictionary (di, attr) -> translate_dictionary prefix mr di attr
+  | Ast.DException (ex, attr) -> translate_exception prefix mr ex attr
+  | Ast.DEnum (en, attr) -> translate_enum prefix mr en attr
+  | Ast.DImplements im -> translate_implements prefix mr im
+  | Ast.DConst co -> translate_global_const prefix mr co
+  | Ast.DModule { Ast.name; Ast.definitions } ->
+      step1_translate_all (name::prefix) mr definitions
+  | Ast.DTypedef ty -> translate_typedef prefix mr ty
+  | Ast.DNothing -> mr
+and step1_translate_all prefix mr = function
+  | def::defs -> step1_translate_all prefix (step1_translate_one prefix mr def) defs
+  | [] -> mr
+
+let step1 defs =
+  step1_translate_all []
+    { mr_definitions = [];
+      mr_typedefs = ScopedNameMap.empty;
+      mr_partial_interface = ScopedNameMap.empty;
+      mr_partial_dictionary = ScopedNameMap.empty }
+    defs
+
+(* Step 2: Resolve partial structures. *)
+type structure_resolution = {
+  sr_definitions: definition list;
+  sr_typedefs: type_ with_attributes ScopedNameMap.t
+}
+
+let rec step2_impl partial_dictionaries partial_interfaces defs' = function
+  | DInterface (({name; members} as it), attrs) :: defs ->
+      begin try
+        let (partials, partial_interfaces') =
+          ScopedNameMap.extract name partial_interfaces
+        in let members' = List.fold_left (fun members' { members } -> members @ members')
+                            members partials
+        in let it' = ({ it with members = members' }, attrs)
+        in step2_impl partial_dictionaries partial_interfaces'
+             (DInterface it' :: defs') defs
+      with Not_found ->
+        step2_impl partial_dictionaries partial_interfaces
+          (DInterface (it, attrs) :: defs') defs
+      end
+  | DDictionary (({name; members} as di), attrs) :: defs ->
+      begin try
+        let ((partials: dictionary list), partial_dictionaries') =
+          ScopedNameMap.extract name partial_dictionaries
+        in let members' = List.fold_left (fun members' ({ members }: dictionary) ->
+                                            members @ members')
+                            members partials
+        in let di' = ({ di with members = members' }, attrs)
+        in step2_impl partial_dictionaries' partial_interfaces
+             (DDictionary di' :: defs') defs
+      with Not_found ->
+        step2_impl partial_dictionaries partial_interfaces
+          (DDictionary (di, attrs) :: defs') defs
+      end
+  | def :: defs ->
+      step2_impl partial_dictionaries partial_interfaces (def :: defs') defs
+  | [] ->
+      if not (ScopedNameMap.is_empty partial_dictionaries) then
+        prerr_endline "Not all partial dictionaries have been resolved";
+      if not (ScopedNameMap.is_empty partial_interfaces) then
+        prerr_endline "Not all partial interfaces have been resolved";
+      defs'
+
+let step2 { mr_definitions; mr_typedefs; mr_partial_interface; mr_partial_dictionary } =
+  { sr_definitions = step2_impl mr_partial_dictionary mr_partial_interface mr_definitions [];
+    sr_typedefs = mr_typedefs }
+
+(* Step 3: Resolve typedefs. *)
 module Vertex = struct
-  type t = string list
-  let equal: string list -> string list -> bool = (=)
-  let compare l1 l2 = BatEnum.compare BatString.compare (BatList.enum l1) (BatList.enum l2)
-  let hash: t -> int = Hashtbl.hash
+  include ScopedName
+  let hash (x: t) = Hashtbl.hash x
 end
 module G = Graph.Imperative.Digraph.Concrete(Vertex)
-module StringListMap = BatMap.Make(Vertex)
+module GTopo = Graph.Topological.Make(G)
 
-                         (*
-let rec iter_type_names f = function
-  | TypeLeaf (NamedType n) -> f n
-  | TypeLeaf _ -> ()
-  | TypeUnion l -> List.iter (iter_type_names f) l
-  | TypeArray t | TypeOption t | TypeNullable t | TypeSequence t -> iter_type_names f t
+let rec iter_type_referenced_names f = function
+  | TUnion ts -> List.iter (iter_type_referenced_names f) ts
+  | TSequence t | TArray t | TOptional t -> iter_type_referenced_names f t
+  | TNamed n -> f n
+  | _ -> ()
 
-let collect_typedef_dependencies depgraph ((name: string list), def, _) =
-  iter_type_names (fun name' -> G.add_edge depgraph name' name) def
-
-let collect_dependencies (defs: Ast.typedef_data list) =
+let build_reference_graph typedefs =
   let depgraph = G.create () in
-  List.iter (collect_typedef_dependencies depgraph) defs;
-  depgraph
+    ScopedNameMap.iter (fun new_name type_ ->
+                          iter_type_referenced_names
+                            (fun old_name -> G.add_edge depgraph new_name old_name)
+                            type_)
+      typedefs;
+    depgraph
 
-let rec substitute_named_types substmap = function
-  | TypeLeaf (NamedType n) ->
-      BatOption.default (TypeLeaf (NamedType n)) (StringListMap.Exceptionless.find n substmap)
-  | TypeLeaf _ as t -> t
-  | TypeUnion l -> TypeUnion (List.map (substitute_named_types substmap) l)
-  | TypeArray t -> TypeArray (substitute_named_types substmap t)
-  | TypeOption t -> TypeOption (substitute_named_types substmap t)
-  | TypeNullable t -> TypeNullable (substitute_named_types substmap t)
-  | TypeSequence t -> TypeSequence (substitute_named_types substmap t)
+let rec type_substitute_named_types subst = function
+  | TNamed name as t ->
+      begin try ScopedNameMap.find name subst with Not_found -> t end
+  | TSequence t -> TSequence (type_substitute_named_types subst t)
+  | TArray t -> TArray (type_substitute_named_types subst t)
+  | TOptional t -> TOptional (type_substitute_named_types subst t)
+  | TUnion ts -> TUnion (List.map (type_substitute_named_types subst) ts)
+  | t -> t
 
-let build_subst_map defs =
-  let defs =
-    List.map (function (DefTypedef d, _) -> d | _ -> failwith "Non-typedef in typedef list")
-      defs in                                    
-  let deps = collect_dependencies defs in
-  let initial_subst_map =
-    List.fold_left (fun map (name, types, attrs) ->
-                      if attrs <> [] then failwith "typedef with attrs not handled";
-                      StringListMap.add name types map) StringListMap.empty defs
-  in let module DFS = Graph.Traverse.Dfs(G) in
-    begin if DFS.has_cycle deps then failwith "Cyclic typedefs" end;
-    let module Top = Graph.Topological.Make(G) in
-    Top.fold (fun name map ->
-                if StringListMap.mem name initial_subst_map then
-                  StringListMap.add name (substitute_named_types map
-                                        (StringListMap.find name initial_subst_map)) map
-                else map (* We may get spurios named types, since typedefs may refer to other, external named types. *))
-      deps StringListMap.empty
+let build_typedef_map typedefs =
+  let typedefs = ScopedNameMap.map (fun (type_, attrs) ->
+                             if attrs <> [] then
+                               prerr_endline "Extended attributes in typedef, ignoring";
+                             type_) typedefs
+  in let g = build_reference_graph typedefs in
+    GTopo.fold (fun typename subst -> try
+                  let type_ = ScopedNameMap.find typename typedefs
+                  in ScopedNameMap.add typename (type_substitute_named_types subst type_)
+                       subst
+                with Not_found -> subst)
+      g ScopedNameMap.empty
 
-let resolve_typedefs defs =
-  let (typedefs, defs) =
-    List.partition (function (DefTypedef _, _) -> true | _ -> false) defs in
-  let subst_map = build_subst_map typedefs in
-  let subst = substitute_named_types subst_map in
-  let rec subst_args l = List.map (fun ((name, ty, mode, value), attrs) ->
-                               (name, subst ty, mode, value), subst_attrs attrs) l
-  and subst_attrs l = List.map (function
-                                | WithArguments (name, id, args) ->
-                                    WithArguments (name, id, subst_args args)
-                                | WithoutArguments _ as w -> w) l
-  in let subst_if_members (mem, attr) =
-    ((match mem with
-        | StringifierEmptyMember -> StringifierEmptyMember
-        | StringifierOperationMember (name, ty, args) ->
-            StringifierOperationMember (name, subst ty, subst_args args)
-        | StringifierAttributeMember (name, inh, ro, ty) ->
-            StringifierAttributeMember (name, inh, ro, subst ty)
-        | OperationMember (name, ty, args, quals) ->
-            OperationMember (name, subst ty, subst_args args, quals)
-        | AttributeMember (name, inh, ro, ty) -> AttributeMember (name, inh, ro, subst ty)
-        | ConstMember (name, ty, value) ->
-            ConstMember (name, subst ty, value)),
-     subst_attrs attr)
-  and subst_ex_members (mem, attr) =
-    ((match mem with
-        | ExConstMember (name, ty, value) -> ExConstMember (name, subst ty, value)
-        | ExValueMember (name, ty) -> ExValueMember (name, subst ty)),
-     subst_attrs attr)
-  and subst_di_members ((name, ty, value), attrs) =
-    ((name, subst ty, value), subst_attrs attrs)
-  in List.map (fun (def, attrs) ->
-                 ((match def with
-                 | DefDictionary (name, mode, mem) ->
-                     DefDictionary (name, mode, List.map subst_di_members mem)
-                 | DefEnum _ as e -> e
-                 | DefTypedef _ -> failwith "Typedef encountered after filtering"
-                 | DefModule _ -> failwith "Module encountered after filtering"
-                 | DefImplements _ as i -> i
-                 | DefInterface (name, mode, mem) ->
-                     DefInterface (name, mode, List.map subst_if_members mem)
-                 | DefException (name, inh, mem) ->
-                     DefException (name, inh, List.map subst_ex_members mem)
-                 | DefCallbackInterface (name, mode, mem) ->
-                     DefCallbackInterface (name, mode, List.map subst_if_members mem)
-                 | DefCallback (name, ty, args) ->
-                     DefCallback (name, subst ty, subst_args args)), subst_attrs attrs))
-       defs
+let type_substitute_type_name subst name =
+  match ScopedNameMap.Exceptionless.find name subst with
+    | Some (TNamed name') -> name'
+    | None -> name
+    | Some _ ->
+        failwith "Reference to a typedef involving a non-trivial type construction where a simple type name is required"
 
-let remove_attrs bad attrs =
-  List.filter (function
-                 | WithArguments (name, _, _)
-                 | WithoutArguments (name, _) ->
-                     if List.mem name bad then begin
-                       prerr_endline("Bad argument " ^ name ^ " given on partial item");
-                       false
-                     end else true) attrs
+let type_substitute_inheritance subst: inheritance -> inheritance =
+  BatList.map (type_substitute_type_name subst)
 
-let merge_partials defs =
-  let interface_defs =
-    List.fold_left
-      (fun id -> function
-         | (DefInterface (name, mode, mem), attrs) ->
-             StringListMap.modify_def (ModePartial, [], []) name
-               (fun (mode', mem', attrs') ->
-                  match mode, mode' with
-                    | ModePartial, _ ->
-                        (mode', mem' @ mem,
-                         remove_attrs ["ArrayClass"; "Constructor"; "ImplicitThis";
-                                       "NamedConstructor"; "NoInterfaceObject"] attrs' @
-                         attrs)
-                    | _, ModePartial -> (mode, mem' @ mem, attrs' @ attrs)
-                    | _, _ -> failwith
-                                ("Multiple non-partial definitions given for interface " ^
-                                 (BatString.join "::" name))) id
-         | _ -> id) StringListMap.empty defs
-  and dictionary_defs =
-    List.fold_left
-      (fun dd -> function
-         | (DefDictionary (name, mode, mem), attrs) ->
-             StringListMap.modify_def (ModePartial, [], []) name
-               (fun (mode', mem', attrs') ->
-                  match mode, mode' with
-                    | ModePartial, _ ->
-                        (mode', mem' @ mem, attrs' @ attrs)
-                    | _, ModePartial -> (mode, mem' @ mem, attrs' @ attrs)
-                    | _, _ -> failwith
-                                ("Multiple non-partial definitions given for dictionary " ^
-                                 (BatString.join "::" name))) dd
-         | _ -> dd) StringListMap.empty defs
-  and rest = List.filter
-               (function (DefInterface _, _) | (DefDictionary _, _) -> false | _ -> true)
-               defs
-  in rest |>
-       StringListMap.fold (fun name (mode, mem, attrs) defs ->
-                       if mode = ModePartial then
-                         failwith("No non-partial definition given for interface " ^ (BatString.join "::" name));
-                       (DefInterface (name, mode, mem), attrs) :: defs) interface_defs |>
-       StringListMap.fold (fun name (mode, mem, attrs) defs ->
-                       if mode = ModePartial then
-                         failwith("No non-partial definition given for dictionary " ^ (BatString.join "::" name));
-                       (DefDictionary (name, mode, mem), attrs) :: defs) dictionary_defs
+let type_substitute_raises subst = BatList.map (type_substitute_type_name subst)
 
-let flat_map f l = BatList.map f l |> BatList.flatten
+let rec type_substitute_extended_attribute subst { name; equals; arguments } =
+  { name; equals; arguments = BatOption.map (type_substitute_arguments subst) arguments }
+and type_substitute_extended_attribute_list subst attrs =
+  BatList.map (type_substitute_extended_attribute subst) attrs
+and type_substitute_arguments subst =
+  BatList.map (fun (arg, attr) ->
+                (type_substitute_argument subst arg,
+                 type_substitute_extended_attribute_list subst attr))
+and type_substitute_argument subst = function
+  | ArgOptional { type_; name; default } ->
+      ArgOptional { name; default; type_ = type_substitute_named_types subst type_ }
+  | ArgRequired { type_; name; multiple } ->
+      ArgRequired { name; multiple; type_ = type_substitute_named_types subst type_ }
 
-(* Stupid naming conventions. We have to map over basically everything to set the right
- * prefixes.
- *
- * First, provide name builders to implement WebIDL's hare-brained module naming rules...
- *)
-let module_name prefix name attrs =
-  (* Ignore the bit about the [Prefix] attribute for now. It won't parse anyway. *)
-  let qname = name :: prefix in
-    if qname = ["dom"] then ["dom";"w3c";"org"]
-    else if prefix = [] then [name;"dom";"w3c";"org"]
-    else name :: prefix
+let type_substitute_with_attributes tsubst subst (x, attr) =
+  (tsubst subst x, type_substitute_extended_attribute_list subst attr)
 
-let qname_from_identifier prefix = function
-  | [name] -> name :: prefix
-  | _ -> failwith "Bad name given"
-let qname_from_name prefix = function
-  | [name] -> name :: prefix
-  | qname -> qname
+let type_substitute_const subst { type_; name; value } =
+  { name; value; type_ = type_substitute_named_types subst type_ }
+let type_substitute_attribute subst { inherited; readonly; type_; name; get; set } =
+  { inherited; readonly; name;
+    type_ = type_substitute_named_types subst type_;
+    set = type_substitute_raises subst set;
+    get = match get with
+      | GRaises ex -> GRaises (type_substitute_raises subst ex)
+      | GInherits -> GInherits }
+let type_substitute_operation subst { return_type; name; arguments; raises } =
+  { name;
+    return_type = type_substitute_named_types subst return_type;
+    raises = type_substitute_raises subst raises;
+    arguments = type_substitute_arguments subst arguments }
 
-let name_base_types prefix = function
-  | NamedType name -> NamedType (qname_from_name prefix name)
-  | other -> other
-let rec name_types prefix = function
-  | TypeLeaf t -> TypeLeaf (name_base_types prefix t)
-  | TypeUnion ts -> TypeUnion (List.map (name_types prefix) ts)
-  | TypeArray t -> TypeArray (name_types prefix t)
-  | TypeOption t -> TypeOption (name_types prefix t)
-  | TypeNullable t -> TypeNullable (name_types prefix t)
-  | TypeSequence t -> TypeSequence (name_types prefix t)
+let type_substitute_interface subst { name; inheritance; members } =
+  let type_substitute_interface_member subst = function
+    | IConst co -> IConst (type_substitute_const subst co)
+    | IAttribute at -> IAttribute (type_substitute_attribute subst at)
+    | IOperation op -> IOperation (type_substitute_operation subst op)
+    | ISpecialOperation (q, op) ->
+        ISpecialOperation (q, type_substitute_operation subst op)
+    | IStringifier (StringAttribute a) ->
+        IStringifier (StringAttribute (type_substitute_attribute subst a))
+    | IStringifier (StringOperation o) ->
+        IStringifier (StringOperation (type_substitute_operation subst o))
+    | IStringifier StringBare -> IStringifier StringBare
+  in { name;
+    inheritance = type_substitute_inheritance subst inheritance;
+    members = BatList.map
+                (type_substitute_with_attributes type_substitute_interface_member subst)
+                members }
 
-let name_argument_data prefix (name, t, mode, value) =
-  (name, name_types prefix t, mode, value)
-let rec name_argument prefix (arg, attrs) =
-  (name_argument_data prefix arg, name_extended_attributes prefix attrs)
-and name_extended_attribute prefix = function
-  | WithArguments (name, equ, args) ->
-      WithArguments (name, equ, name_arguments prefix args)
-  | WithoutArguments _ as other -> other
-and name_arguments prefix args = List.map (name_argument prefix) args
-and name_extended_attributes prefix attrs =
-  List.map (name_extended_attribute prefix) attrs
+let type_substitute_callback subst { name; type_; arguments } =
+  { name;
+    type_ = type_substitute_with_attributes type_substitute_named_types subst type_;
+    arguments = type_substitute_arguments subst arguments }
 
-let name_stringifier_operation_data prefix (name, t, args) =
-  (name, name_types prefix t, name_arguments prefix args)
-let name_const_data prefix (name, t, value) = (name, name_types prefix t, value)
-let name_attribute_data prefix (name, f1, f2, t) = (name, f1, f2, name_types prefix t)
-let name_operation_data prefix (name, rt, args, q) =
-  (name, name_types prefix rt, name_arguments prefix args, q)
-let name_members prefix = function
-  | StringifierEmptyMember -> StringifierEmptyMember
-  | StringifierOperationMember o ->
-      StringifierOperationMember (name_stringifier_operation_data prefix o)
-  | StringifierAttributeMember a ->
-      StringifierAttributeMember (name_attribute_data prefix a)
-  | OperationMember o -> OperationMember (name_operation_data prefix o)
-  | AttributeMember a -> AttributeMember (name_attribute_data prefix a)
-  | ConstMember c -> ConstMember (name_const_data prefix c)
-let name_exception_member prefix = function
-  | ExConstMember c -> ExConstMember (name_const_data prefix c)
-  | ExValueMember (name, t) -> ExValueMember (name, name_types prefix t)
-let name_mode prefix = function
-  | ModeInherit p -> ModeInherit (qname_from_name prefix p)
-  | other -> other
+let type_substitute_dictionary subst ({ name; inheritance; members }: dictionary):
+                                                             dictionary =
+  let subst_dictionary_member subst ({ type_; name; default }: dictionary_member) =
+    { name; default; type_ = type_substitute_named_types subst type_ }
+  in
+  { name;
+    inheritance = type_substitute_inheritance subst inheritance;
+    members = BatList.map (type_substitute_with_attributes subst_dictionary_member subst)
+                members }
 
-let name_dictionary_entry prefix (name, t, v) = (name, name_types prefix t, v)
-let name_dictionary_member prefix (d, a) =
-  (name_dictionary_entry prefix d, name_extended_attributes prefix a)
-let name_interface_member prefix (m, a) =
-  (name_members prefix m, name_extended_attributes prefix a)
-let name_dictionary_data prefix (n, m, d): dictionary_data =
-  (qname_from_identifier prefix n, name_mode prefix m,
-   List.map (name_dictionary_member prefix) d)
-let name_interface_data prefix (n, m, d) =
-  (qname_from_identifier prefix n, name_mode prefix m,
-   List.map (name_interface_member prefix) d)
-let name_exception_data prefix (n, i, m) =
-  (qname_from_identifier prefix n, BatOption.map (qname_from_name prefix) i,
-   List.map (fun (e, a) ->
-               (name_exception_member prefix e, name_extended_attributes prefix a)) m)
-let name_enum_data prefix (n, d) = (qname_from_identifier prefix n, d)
-let name_typedef_data prefix (n, t, a) =
-  (qname_from_identifier prefix n, name_types prefix t, name_extended_attributes prefix a)
-let name_callback_data prefix (n, t, a) =
-  (qname_from_identifier prefix n, name_types prefix t, name_arguments prefix a)
-let name_implements_data prefix (n1, n2) =
-  (qname_from_name prefix n1, qname_from_name prefix n2)
+let type_substitute_exception subst ({ name; inheritance; members }: exception_):
+                                                            exception_ =
+  let subst_exception_member subst = function
+    | EConst co -> EConst (type_substitute_const subst co)
+    | EField { type_; name } ->
+        EField { name; type_ = type_substitute_named_types subst type_ }
+  in
+    { name;
+      inheritance = type_substitute_inheritance subst inheritance;
+      members = BatList.map (type_substitute_with_attributes subst_exception_member subst)
+                  members }
 
-let resolve_modules defs =
-  let rec impl prefix defs =
-    flat_map
-      (fun (d, a) ->
-         let a = name_extended_attributes prefix a in
-         match d with
-           | DefDictionary d -> [DefDictionary (name_dictionary_data prefix d), a]
-           | DefEnum e -> [DefEnum (name_enum_data prefix e), a]
-           | DefInterface d -> [DefInterface (name_interface_data prefix d), a]
-           | DefException d -> [DefException (name_exception_data prefix d), a]
-           | DefTypedef d -> [DefTypedef (name_typedef_data prefix d), a]
-           | DefImplements d -> [DefImplements (name_implements_data prefix d), a]
-           | DefCallback d -> [DefCallback (name_callback_data prefix d), a]
-           | DefCallbackInterface d ->
-               [DefCallbackInterface (name_interface_data prefix d), a]
-           | DefModule (name, defs) -> impl (name :: prefix) defs
-      ) defs
-  in impl [] defs
-  *)
+let type_substitute_global_const subst ({ type_; name; value }: global_const): global_const =
+  { name; value; type_ = type_substitute_named_types subst type_ }
 
-let cleanup defs = raise Exit
-                     (*
-  defs
-    |> resolve_modules
-    |> resolve_typedefs
-    |> merge_partials
+let step3 { sr_definitions; sr_typedefs } =
+  let subst = build_typedef_map sr_typedefs in
+    List.map (function
+                | DCallbackInterface it ->
+                    DCallbackInterface
+                      (type_substitute_with_attributes type_substitute_interface subst it)
+                | DCallback cb ->
+                    DCallback
+                      (type_substitute_with_attributes type_substitute_callback subst cb)
+                | DInterface it ->
+                    DInterface
+                      (type_substitute_with_attributes type_substitute_interface subst it)
+                | DDictionary di ->
+                    DDictionary
+                      (type_substitute_with_attributes type_substitute_dictionary subst di)
+                | DException ex ->
+                    DException
+                      (type_substitute_with_attributes type_substitute_exception subst ex)
+                | DEnum en -> DEnum (type_substitute_with_attributes (fun _ x -> x) subst en)
+                | DImplements (l, r) -> DImplements (l, r)
+                | DConst gc -> DConst (type_substitute_global_const subst gc))
+      sr_definitions
 
-                      *)
+let cleanup defs =
+  defs |> step1 |> step2 |> step3
