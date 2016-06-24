@@ -20,7 +20,7 @@ type type_ =
   | TAny
 
 type extended_attribute =
-    { name: string; equals: string option; arguments: arguments }
+    { name: string; equals: string option; arguments: arguments option }
 and extended_attribute_list = extended_attribute list
 and 'a with_attributes = 'a * extended_attribute_list
 and arguments = argument with_attributes list
@@ -87,12 +87,12 @@ type interface =
 
 type module_ = { name: string; definitions: definitions }
 and definition =
-  | DCallbackInterface of interface
-  | DCallback of callback
-  | DInterface of interface
-  | DDictionary of dictionary
-  | DException of exception_
-  | DEnum of enum
+  | DCallbackInterface of interface with_attributes
+  | DCallback of callback with_attributes
+  | DInterface of interface with_attributes
+  | DDictionary of dictionary with_attributes
+  | DException of exception_ with_attributes
+  | DEnum of enum with_attributes
   | DImplements of implements
   | DModule of module_
   | DTypedef of typedef

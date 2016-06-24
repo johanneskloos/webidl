@@ -10,7 +10,7 @@ open Common
 %token LBracket RBracket (*Other Minus Dot*) Lt Gt Question Unrestricted Any OR
 %token DOMString Sequence Object Date Boolean Byte Octet Float Double
 %token Unsigned Short Long Void Comma EOF Module DoubleColon Infinity NaN
-%token GetRaises SetRaises Raises Minus Omittable Valuetype In Inherits
+%token GetRaises SetRaises Raises Minus Omittable Valuetype In Inherits InOut
 %token<int> IntegerValue
 %token<float> FloatValue
 
@@ -42,32 +42,32 @@ comma_separated_list(object_): res=separated_nonempty_list(Comma, res=object_ { 
 definitions: res=list(definition) { res };
 
 definition:
-    | Callback x=interface { DCallbackInterface x }
-    | x=callback { DCallback x }
-    | x=interface { DInterface x }
-    | x=partial_interface { DInterface x }
-    | x=dictionary { DDictionary x }
-    | x=partial_dictionary { DDictionary x }
-    | x=exception_ { DException x }
-    | x=enum { DEnum x }
+    | a=extended_attribute_list Callback x=interface { DCallbackInterface (x, a) }
+    | a=extended_attribute_list x=callback { DCallback (x, a) }
+    | a=extended_attribute_list x=interface { DInterface (x, a) }
+    | a=extended_attribute_list x=partial_interface { DInterface (x, a) }
+    | a=extended_attribute_list x=dictionary { DDictionary (x, a) }
+    | a=extended_attribute_list x=partial_dictionary { DDictionary (x, a) }
+    | a=extended_attribute_list x=exception_ { DException (x, a) }
+    | a=extended_attribute_list x=enum { DEnum (x, a) }
     | x=typedef { match x with Some x -> DTypedef x | None -> DNothing }
     | x=implements_statement { DImplements x }
     | x=module_ { DModule x }
     | x=valuetype { match x with Some x -> DTypedef x | None -> DNothing }
     | x=const { DConst x }
 
-module_: Module name=Identifier LBrace definitions=definitions RBrace
+module_: Module name=identifier LBrace definitions=definitions RBrace Semicolon
       { { name; definitions } }
 
 interface:
-      Interface name=Identifier inheritance=inheritance
+      Interface name=identifier inheritance=inheritance
       LBrace members=interface_members RBrace Semicolon
       { IRegular { name; inheritance; members } }
-    | Interface name=Identifier Semicolon
+    | Interface name=identifier Semicolon
       { IForward name }
 
 partial_interface:
-      Partial Interface name=Identifier LBrace members=interface_members RBrace Semicolon
+      Partial Interface name=identifier LBrace members=interface_members RBrace Semicolon
       { IPartial { name; members } }
 
 interface_members: res=list_with_attributes(interface_member) { res }
@@ -76,44 +76,44 @@ interface_member:
     c=const { IConst c } | x=attribute_or_operation { IAttributeOrOperation x }
 
 dictionary:
-      Dictionary name=Identifier inheritance=inheritance
+      Dictionary name=identifier inheritance=inheritance
       LBrace members=dictionary_members RBrace Semicolon
       { { name; inheritance; members; partial = false } }
 
 partial_dictionary:
-      Partial Dictionary name=Identifier LBrace members=dictionary_members RBrace Semicolon
+      Partial Dictionary name=identifier LBrace members=dictionary_members RBrace Semicolon
       { { name; members; inheritance = []; partial = true } }
 
 dictionary_members: res=list_with_attributes(dictionary_member) { res }
 
-dictionary_member: type_=type_ name=Identifier default=default Semicolon
+dictionary_member: type_=type_ name=identifier default=default Semicolon
       { { type_; name; default } }
 
 default: res=option(Equals v=const_value { v }) { res }
 
 exception_:
-      Exception name=Identifier inheritance=inheritance LBrace members=exception_members
-      RBrace
+      Exception name=identifier inheritance=inheritance LBrace members=exception_members
+      RBrace Semicolon
       { { name; inheritance; members } }
 
 exception_members: res=list_with_attributes(exception_member) { res }
 
 inheritance: res=loption(Colon inh=comma_separated_list(scoped_name) { inh }) { res }
 
-enum: Enum name=Identifier LBrace contents=comma_separated_list(String) RBrace Semicolon
+enum: Enum name=identifier LBrace contents=comma_separated_list(String) RBrace Semicolon
       { { name; contents } }
 
-callback: Callback name=Identifier Equals type_=type_ arguments=arguments Semicolon
+callback: Callback name=identifier Equals type_=type_ arguments=arguments Semicolon
       { { name; type_=(type_, []); arguments } }
 
 typedef:
-    | Typedef attr=extended_attribute_list type_=type_ name=Identifier Semicolon
+    | Typedef attr=extended_attribute_list type_=type_ name=identifier Semicolon
       { Some ({ name; type_=(type_, attr) }) }
     | Typedef extended_attribute_list type_ DOMString Semicolon
       { None }
 
 valuetype:
-    | Valuetype name=Identifier type_=type_ Semicolon
+    | Valuetype name=identifier type_=type_ Semicolon
       { Some ({ name; type_=(type_, [])}) }
     | Valuetype DOMString Sequence Lt Unsigned Short Gt Semicolon
       { None }
@@ -133,14 +133,14 @@ stringifier_attribute_or_operation:
 attribute:
     inherited=boption(Inherit)
     readonly=boption(ReadOnly)
-    Attribute type_=type_ name=Identifier get=get set=setraises Semicolon
+    Attribute type_=type_ name=argument_name get=get set=setraises Semicolon
     { { inherited; readonly; type_; name; get; set } }
 
 get:
     | GetRaises LBrace names=scoped_name_list RBrace { GRaises names }
     | Inherits Getter { GInherits }
     | { GRaises [] }
-setraises: res=loption(SetRaises LBrace names=scoped_name_list RBrace { names }) { res }
+setraises: res=loption(SetRaises LPar names=scoped_name_list RPar { names }) { res }
 
 operation: q=option(qualifiers) o=operation_rest { (q, o) }
 qualifiers:
@@ -153,15 +153,15 @@ qualifiers:
     | Omittable { QOmittable }
 
 operation_rest:
-    return_type=type_ name=option(Identifier) arguments=arguments
-    raises=loption(Raises LBrace s=scoped_name_list RBrace { s }) Semicolon
+    return_type=type_ name=option(identifier) arguments=arguments
+    raises=loption(Raises LPar s=scoped_name_list RPar { s }) Semicolon
     { ({ return_type; name; arguments; raises }: operation) }
 
 exception_member:
     | c=const { EConst c }
-    | type_=type_ name=Identifier Semicolon { EField { type_; name } }
+    | type_=type_ name=identifier Semicolon { EField { type_; name } }
 
-const: Const type_=type_ name=Identifier Equals value=const_value Semicolon
+const: Const type_=type_ name=identifier Equals value=const_value Semicolon
         { { type_; name; value } }
 
 const_value:
@@ -206,8 +206,9 @@ float_type:
     | unrestricted=boption(Unrestricted) Double
     { { unrestricted; double = true } }
 
-arguments: LPar args=comma_separated_list(argument) RPar { args }
-argument: attr=extended_attribute_list option(In) arg=optional_or_required_argument
+argmode: In | InOut | { () }
+arguments: LPar args=separated_list(Comma, arg=argument { arg }) RPar { args }
+argument: attr=extended_attribute_list argmode arg=optional_or_required_argument
     { (arg, attr) }
 optional_or_required_argument:
     | Optional type_=type_ name=argument_name default=default
@@ -216,28 +217,41 @@ optional_or_required_argument:
       { ArgRequired { type_; name; multiple } }
 
 argument_name:
-    | x = Identifier { x }
+    | x = identifier { x }
+    | Callback { "callback" }
+    | Partial { "partial" }
+    | Dictionary { "dictionary" }
+    | Exception { "exception" }
+    | Enum { "enum" }
+    | Attribute { "attribute" }
+    | Module { "module" }
+    | Valuetype { "valuetype" }
+    | Object { "object" }
 
 extended_attribute_list:
-      attrs=loption(LBracket attrs=comma_separated_list(extended_attribute) RBracket { attrs })
+      attrs=loption(LBracket attrs=comma_separated_list(extended_attribute) option(Comma) RBracket { attrs })
       { attrs }
 
 extended_attribute:
-    name=Identifier equals=option(Equals equ=Identifier { equ }) arguments=loption(arguments)
+    name=identifier equals=option(Equals equ=identifier { equ }) arguments=option(arguments)
     { { name; equals; arguments } }
 
 scoped_name_list: res=comma_separated_list(scoped_name) { res }
 scoped_name:
     | DoubleColon name=scoped_name_after_colon
     { { name with absolute = true } }
-    | id=Identifier
+    | id=identifier
     { { absolute = false; path = [id]; ends_in_domstring = false } }
-    | id=Identifier DoubleColon name=scoped_name_after_colon
+    | id=identifier DoubleColon name=scoped_name_after_colon
     { { name with path = id :: name.path } }
 scoped_name_after_colon:
-    | id=Identifier
+    | id=identifier
     { { absolute = false; path = [id]; ends_in_domstring = false } }
-    | id=Identifier DoubleColon name=scoped_name_after_colon
+    | id=identifier DoubleColon name=scoped_name_after_colon
     { { name with path = id :: name.path } }
     | DOMString
     { { absolute = false; path = []; ends_in_domstring = true } }
+
+identifier:
+    id=Identifier { id }
+
