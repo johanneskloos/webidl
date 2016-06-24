@@ -1,6 +1,7 @@
 open IdlData
 open AstParseError
 open AstParseExtendedAttributes
+open SimpleAst
 (** Second step: Translate the AST to a nicer form *)
 
 let update_if_default what defvalue newvalue ctx curvalue =
@@ -40,50 +41,50 @@ let parse_string_args ctx args =
 
     (*
 let translate_base_type ctx args = function
-  | Ast.ShortType ->
+  | SimpleAst.ShortType ->
       let (out_of_range, user_args) = parse_int_args ctx args in
       (IntType { length = Short; unsigned = false; out_of_range }, user_args)
-  | Ast.LongType ->
+  | SimpleAst.LongType ->
       let (out_of_range, user_args) = parse_int_args ctx args in
       (IntType { length = Long; unsigned = false; out_of_range }, user_args)
-  | Ast.LongLongType ->
+  | SimpleAst.LongLongType ->
       let (out_of_range, user_args) = parse_int_args ctx args in
       (IntType { length = LongLong; unsigned = false; out_of_range }, user_args)
-  | Ast.UnsignedShortType ->
+  | SimpleAst.UnsignedShortType ->
       let (out_of_range, user_args) = parse_int_args ctx args in
       (IntType { length = Short; unsigned = true; out_of_range }, user_args)
-  | Ast.UnsignedLongType ->
+  | SimpleAst.UnsignedLongType ->
       let (out_of_range, user_args) = parse_int_args ctx args in
       (IntType { length = Long; unsigned = true; out_of_range }, user_args)
-  | Ast.UnsignedLongLongType ->
+  | SimpleAst.UnsignedLongLongType ->
       let (out_of_range, user_args) = parse_int_args ctx args in
       (IntType { length = LongLong; unsigned = true; out_of_range }, user_args)
-  | Ast.FloatType -> (FloatType { double = false; unrestricted = false }, args)
-  | Ast.DoubleType -> (FloatType { double = true; unrestricted = false }, args)
-  | Ast.UnrestrictedFloatType -> (FloatType { double = false; unrestricted = true }, args)
-  | Ast.UnrestrictedDoubleType -> (FloatType { double = true; unrestricted = true }, args)
-  | Ast.DOMStringType ->
+  | SimpleAst.FloatType -> (FloatType { double = false; unrestricted = false }, args)
+  | SimpleAst.DoubleType -> (FloatType { double = true; unrestricted = false }, args)
+  | SimpleAst.UnrestrictedFloatType -> (FloatType { double = false; unrestricted = true }, args)
+  | SimpleAst.UnrestrictedDoubleType -> (FloatType { double = true; unrestricted = true }, args)
+  | SimpleAst.DOMStringType ->
       let (string_args, user_args) = parse_string_args ctx args in
       (DOMStringType string_args, user_args)
-  | Ast.NamedType n -> (NamedType n, args)
-  | Ast.AnyType -> (AnyType, args)
-  | Ast.VoidType -> (VoidType, args)
-  | Ast.OctetType -> (OctetType, args)
-  | Ast.ByteType -> (ByteType, args)
-  | Ast.BooleanType -> (BooleanType, args)
-  | Ast.DateType -> (DateType, args)
-  | Ast.ObjectType -> (ObjectType, args)
+  | SimpleAst.NamedType n -> (NamedType n, args)
+  | SimpleAst.AnyType -> (AnyType, args)
+  | SimpleAst.VoidType -> (VoidType, args)
+  | SimpleAst.OctetType -> (OctetType, args)
+  | SimpleAst.ByteType -> (ByteType, args)
+  | SimpleAst.BooleanType -> (BooleanType, args)
+  | SimpleAst.DateType -> (DateType, args)
+  | SimpleAst.ObjectType -> (ObjectType, args)
 
 let intersect l1 l2 = List.filter (fun x -> List.mem x l1) l2
 
 let rec translate_type ctx args = function
-  | Ast.TypeLeaf b -> translate_base_type ctx args b
-  | Ast.TypeUnion u ->
+  | SimpleAst.TypeLeaf b -> translate_base_type ctx args b
+  | SimpleAst.TypeUnion u ->
       let (types, user_attrs) = List.split (List.map (translate_type ctx args) u)
       in ((UnionType types), List.fold_left intersect args user_attrs)
-  | Ast.TypeArray t ->
+  | SimpleAst.TypeArray t ->
       let (type_, user_attrs) = translate_type ctx args t in (ArrayType type_, user_attrs)
-  | Ast.TypeOption t -> 
+  | SimpleAst.TypeOption t -> 
       let (treat_undefined_as_missing, remaining_attrs) =
         handle_non_failing_known false ctx [
           xattr_equals_specific "TreatUndefinedAs" [
@@ -92,13 +93,13 @@ let rec translate_type ctx args = function
         ] args 
       in let (type_, user_attrs) = translate_type ctx remaining_attrs t
       in (OptionType(treat_undefined_as_missing, type_), user_attrs)
-  | Ast.TypeNullable t ->
+  | SimpleAst.TypeNullable t ->
       let (type_, user_attrs) = translate_type ctx args t in (NullableType type_, user_attrs)
-  | Ast.TypeSequence t ->
+  | SimpleAst.TypeSequence t ->
       let (type_, user_attrs) = translate_type ctx args t in (SequenceType type_, user_attrs)
 let translate_type ctx ty args = translate_type ctx args ty
 
-let translate_value ctx (x: Ast.value): value = x
+let translate_value ctx (x: SimpleAst.value): value = x
 
 type ('a, 'b) either = Left of 'a | Right of 'b
 let rec partition_map f = function
@@ -108,27 +109,27 @@ let rec partition_map f = function
       | Right y -> (ll, y::lr)
 
 let translate_mode_and_default ctx mode default = match mode with
-  | Ast.ModeSingle ->
+  | SimpleAst.ModeSingle ->
       if default <> None then warn ctx "Default given for single argument";
       Single
-  | Ast.ModeMultiple ->
+  | SimpleAst.ModeMultiple ->
       if default <> None then warn ctx "Default given for variadic argument";
       Multiple
-  | Ast.ModeOptional ->
+  | SimpleAst.ModeOptional ->
       match default with
         | Some default -> Default default
         | None -> Optional
 
 let rec translate_attributes ctx attrs =
   List.map (function
-              | Ast.WithoutArguments(name, None) -> UAPlain name
-              | Ast.WithoutArguments(name, Some id) -> UAEquals (name, id)
-              | Ast.WithArguments(name, None, args) ->
+              | SimpleAst.WithoutArguments(name, None) -> UAPlain name
+              | SimpleAst.WithoutArguments(name, Some id) -> UAEquals (name, id)
+              | SimpleAst.WithArguments(name, None, args) ->
                   UAArguments (name, translate_arguments ctx args)
-              | Ast.WithArguments(name, Some id, args) ->
+              | SimpleAst.WithArguments(name, Some id, args) ->
                   UAArgumentsEquals (name, id, translate_arguments ctx args))
     attrs
-and translate_argument ctx (((name, types, mode, default): Ast.argument_data), attrs) =
+and translate_argument ctx (((name, types, mode, default): SimpleAst.argument_data), attrs) =
   let ctx = ctx_push_scope ctx "Argument %s" name in
   let kind = translate_mode_and_default ctx mode default in
   let (types, user_attributes) = translate_type ctx types attrs in
@@ -193,7 +194,7 @@ let translate_legacy_caller ctx name return' args attrs =
       | None  -> [])
 
 let translate_special
-      ctx qualifier name return (args: Ast.argument_list)
+      ctx qualifier name return (args: SimpleAst.argument_list)
       attrs indexed_properties named_properties =
   let ctx = ctx_push_scope ctx "Special operation %a" (Fmt.option ~none:without_name Fmt.string) name in
   let translate_attributed_type translate ctx ty attrs =
@@ -206,35 +207,35 @@ let translate_special
           translate_attributed_type translate_type ctx arg argattrs)
   in
   ((match qualifier, List.map (fun ((_, ty, _, _), attrs) -> (ty, attrs)) args with
-    | Ast.SpecGetter, [ (Ast.TypeLeaf Ast.UnsignedLongType, argattrs) ] ->
+    | SimpleAst.SpecGetter, [ (SimpleAst.TypeLeaf SimpleAst.UnsignedLongType, argattrs) ] ->
         if argattrs <> [] then warn ctx "Attributes given for index argument";
         ({ indexed_properties with getter = translate_one return attrs },
          named_properties)
-    | Ast.SpecGetter, [ (Ast.TypeLeaf Ast.DOMStringType, argattrs) ] ->
+    | SimpleAst.SpecGetter, [ (SimpleAst.TypeLeaf SimpleAst.DOMStringType, argattrs) ] ->
         if argattrs <> [] then warn ctx "Attributes given for index argument";
         (indexed_properties,
          { named_properties with getter = translate_one return attrs })
-    | Ast.SpecDeleter, [ (Ast.TypeLeaf Ast.UnsignedLongType, argattrs) ] ->
+    | SimpleAst.SpecDeleter, [ (SimpleAst.TypeLeaf SimpleAst.UnsignedLongType, argattrs) ] ->
         if argattrs <> [] then warn ctx "Attributes given for index argument";
         ({ indexed_properties with deleter = translate_one return attrs },
          named_properties)
-    | Ast.SpecDeleter, [ (Ast.TypeLeaf Ast.DOMStringType, argattrs) ] ->
+    | SimpleAst.SpecDeleter, [ (SimpleAst.TypeLeaf SimpleAst.DOMStringType, argattrs) ] ->
         if argattrs <> [] then warn ctx "Attributes given for index argument";
         (indexed_properties,
          { named_properties with deleter = translate_one return attrs })
-    | Ast.SpecSetter, [ (Ast.TypeLeaf Ast.UnsignedLongType, retattrs);
+    | SimpleAst.SpecSetter, [ (SimpleAst.TypeLeaf SimpleAst.UnsignedLongType, retattrs);
                         (arg, argattrs) ] ->
         ({ indexed_properties with setter = translate_two arg argattrs return retattrs },
          named_properties)
-    | Ast.SpecSetter, [ (Ast.TypeLeaf Ast.DOMStringType, retattrs);
+    | SimpleAst.SpecSetter, [ (SimpleAst.TypeLeaf SimpleAst.DOMStringType, retattrs);
                         (arg, argattrs) ] ->
         (indexed_properties,
          { named_properties with setter = translate_two arg argattrs return retattrs })
-    | Ast.SpecCreator, [ (Ast.TypeLeaf Ast.UnsignedLongType, retattrs);
+    | SimpleAst.SpecCreator, [ (SimpleAst.TypeLeaf SimpleAst.UnsignedLongType, retattrs);
                          (arg, argattrs) ] ->
         ({ indexed_properties with creator = translate_two arg argattrs return retattrs },
          named_properties)
-    | Ast.SpecCreator, [ (Ast.TypeLeaf Ast.DOMStringType, retattrs);
+    | SimpleAst.SpecCreator, [ (SimpleAst.TypeLeaf SimpleAst.DOMStringType, retattrs);
                          (arg, argattrs) ] ->
         (indexed_properties,
          { named_properties with creator = translate_two arg argattrs return retattrs })
@@ -243,7 +244,7 @@ let translate_special
    match name with
      | Some _ ->
          let args = List.map (fun ((name, ty, _, _), attrs) ->
-                                ((name, ty, Ast.ModeSingle, None), attrs)) args in
+                                ((name, ty, SimpleAst.ModeSingle, None), attrs)) args in
          [ translate_regular_operation ctx name return args attrs ]
      | None -> [])
 
@@ -253,11 +254,11 @@ let translate_operation ctx name return arguments qualifiers attrs interface =
     | [] ->
         let op = translate_regular_operation ctx name return arguments attrs in
           { interface with operations = op :: interface.operations }
-    | [Ast.SpecLegacyCaller] ->
+    | [SimpleAst.SpecLegacyCaller] ->
         let (legacy, op) = translate_legacy_caller ctx name return arguments attrs in
           { interface with operations = op @ interface.operations;
                            legacy_callers = legacy :: interface.legacy_callers }
-    | [Ast.SpecStatic] ->
+    | [SimpleAst.SpecStatic] ->
         let op = translate_regular_operation ctx name return arguments attrs in
           { interface with static_operations = op :: interface.static_operations }
     | [qual] ->
@@ -278,7 +279,7 @@ let translate_stringifer_empty ctx attrs =
 
 let translate_stringifier_operation ctx name return args attrs =
   let ctx = ctx_push_scope ctx "Stringifier operation %a" (Fmt.option ~none:without_name Fmt.string) name in
-  begin if return <> Ast.TypeLeaf Ast.DOMStringType then
+  begin if return <> SimpleAst.TypeLeaf SimpleAst.DOMStringType then
     warn ctx "Stringifier does not return string"
   end;
   begin if args <> [] then
@@ -301,27 +302,27 @@ let translate_member ctx interface (member, attrs) =
     if interface.stringifier <> NoStringifier then warn ctx "More than one stringifier";
     { interface with stringifier }
   in match member with
-    | Ast.StringifierEmptyMember -> 
+    | SimpleAst.StringifierEmptyMember -> 
         { interface with stringifier = translate_stringifer_empty ctx attrs }
-    | Ast.StringifierOperationMember (name, return, args) ->
+    | SimpleAst.StringifierOperationMember (name, return, args) ->
         let (str, op) = translate_stringifier_operation ctx (Some name) return args attrs in
         let interface' = update_stringifier str in
           { interface' with operations = op @ interface.operations }
-    | Ast.StringifierAttributeMember (name, inherited, readonly, types) ->
+    | SimpleAst.StringifierAttributeMember (name, inherited, readonly, types) ->
         let (str, attr) =
           translate_stringifier_attribute ctx name inherited readonly types attrs in
         let interface' = update_stringifier str in
           { interface' with attributes = attr :: interface.attributes }
-    | Ast.OperationMember  (name, return, arguments, qualifiers) ->
+    | SimpleAst.OperationMember  (name, return, arguments, qualifiers) ->
         translate_operation ctx name return arguments qualifiers attrs interface
-    | Ast.AttributeMember (name, inherited, readonly, types) ->
+    | SimpleAst.AttributeMember (name, inherited, readonly, types) ->
         let attr = translate_attribute ctx (name, inherited, readonly, types) attrs in
           { interface with attributes = attr :: interface.attributes }
-    | Ast.ConstMember (name, types, value) ->
+    | SimpleAst.ConstMember (name, types, value) ->
         let value = translate_constant ctx (name, types, value) attrs in
           { interface with consts = value :: interface.consts }
 
-let parse_constructor ctx name constructors (args: Ast.argument_list option) =
+let parse_constructor ctx name constructors (args: SimpleAst.argument_list option) =
   let ctx = ctx_push_scope ctx "Constructor %a" pp_qualified_name name in
   { name; user_attributes = [];
     args = translate_arguments ctx (BatOption.default [] args)
@@ -385,13 +386,13 @@ let translate_interface ctx (name, mode, members) attrs =
       ]
       attrs
   in let inheritance_mode = match mode with
-    | Ast.ModePartial ->
+    | SimpleAst.ModePartial ->
         error ctx "Partial interfaces should have been resolved at this point!";
         Toplevel
-    | Ast.ModeInherit from ->
+    | SimpleAst.ModeInherit from ->
         if is_array then warn ctx "Trying to perform double inheritance";
         InheritsFrom from
-    | Ast.ModeTop ->
+    | SimpleAst.ModeTop ->
         if is_array then ArrayClass else Toplevel
   and empty_properties = { getter = None; setter = None; deleter = None; creator = None }
   in let init = {
@@ -420,9 +421,9 @@ let translate_dictionary_entry ctx ((name, types, default_value), attrs) =
 let translate_dictionary ctx (name, mode, members) attrs =
   let ctx = ctx_push_scope ctx "Dictionary %a" pp_qualified_name name in
   let inherits_from = match mode with
-    | Ast.ModeTop -> None
-    | Ast.ModeInherit from -> Some from
-    | Ast.ModePartial ->
+    | SimpleAst.ModeTop -> None
+    | SimpleAst.ModeInherit from -> Some from
+    | SimpleAst.ModePartial ->
         error ctx "At this point, no partial dictionaries should remain"; None
   in { name; inherits_from; user_attributes = translate_attributes ctx attrs;
        members = List.map (translate_dictionary_entry ctx) members
@@ -434,9 +435,9 @@ let translate_exception_member ctx name types attrs =
   { name; types; user_attributes = translate_attributes ctx attrs }
 
 let translate_exception_member' ctx exc (member, attrs) = match member with
-  | Ast.ExConstMember const ->
+  | SimpleAst.ExConstMember const ->
       { exc with consts = translate_constant ctx const attrs :: exc.consts }
-  | Ast.ExValueMember (name, types) ->
+  | SimpleAst.ExValueMember (name, types) ->
       { exc with
             members = translate_exception_member ctx name types attrs :: exc.members }
 let translate_exception ctx (name, inherits_from, members) attrs =
@@ -478,30 +479,30 @@ let translate_definitions =
   let top = ctx_top () in
     List.fold_left
       (fun defs (def, attrs) -> match def with
-         | Ast.DefEnum e ->
+         | SimpleAst.DefEnum e ->
              let e = translate_enumeration top e attrs in
                { defs with enumerations = QNameMap.add e.name e defs.enumerations }
-         | Ast.DefException e ->
+         | SimpleAst.DefException e ->
              let e = translate_exception top e attrs in
                { defs with exceptions = QNameMap.add e.name e defs.exceptions }
-         | Ast.DefCallback (name, ret, args) ->
+         | SimpleAst.DefCallback (name, ret, args) ->
              let c = translate_callback top (name, ret, args) attrs in
                { defs with callbacks = QNameMap.add c.name c defs.callbacks }
-         | Ast.DefInterface i ->
+         | SimpleAst.DefInterface i ->
              let i = translate_interface top i attrs in
                { defs with interfaces = QNameMap.add i.name i defs.interfaces }
-         | Ast.DefCallbackInterface i ->
+         | SimpleAst.DefCallbackInterface i ->
              let i = translate_interface top i attrs in
                { defs with callback_interfaces =
                    QNameMap.add i.name i defs.callback_interfaces }
-         | Ast.DefDictionary d ->
+         | SimpleAst.DefDictionary d ->
              let d = translate_dictionary top d attrs in
                { defs with dictionaries = QNameMap.add d.name d defs.dictionaries }
-         | Ast.DefImplements (lower, upper) ->
+         | SimpleAst.DefImplements (lower, upper) ->
              { defs with implements = (lower, upper) :: defs.implements }
-         | Ast.DefTypedef _ ->
+         | SimpleAst.DefTypedef _ ->
              error top "Typedef in definitions; please clean up first"; defs
-         | Ast.DefModule _ ->
+         | SimpleAst.DefModule _ ->
              error top "Module in definitions; please clean up first"; defs
       ) { dictionaries = QNameMap.empty;
           enumerations = QNameMap.empty;

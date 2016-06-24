@@ -1,7 +1,7 @@
 open AstParseError
 type ctx = AstParseError.ctx
 
-type 'a arg_handler = 'a -> ctx -> string option -> Ast.argument list option -> 'a
+type 'a arg_handler = 'a -> ctx -> string option -> SimpleAst.arguments option -> 'a
 
 let xattr_plain id (f: ctx -> 'a -> 'a): string * 'a arg_handler =
   (id, fun state ctx equ args ->
@@ -28,7 +28,7 @@ let xattr_equals id (f: ctx -> 'a -> string -> 'a): string * 'a arg_handler =
 
 
 let xattr_maybe_arguments
-      id (f: ctx -> 'a -> Ast.argument_list option -> 'a): string * 'a arg_handler =
+      id (f: ctx -> 'a -> SimpleAst.arguments option -> 'a): string * 'a arg_handler =
   (id, fun state ctx equ args ->
      begin match equ with
        | Some equ -> warn ctx "Unexpected `=%s' for %s" equ id
@@ -38,7 +38,7 @@ let xattr_maybe_arguments
 
 let xattr_equals_maybe_arguments
       id
-      (f: ctx -> 'a -> string -> Ast.argument_list option -> 'a): string * 'a arg_handler =
+      (f: ctx -> 'a -> string -> SimpleAst.arguments option -> 'a): string * 'a arg_handler =
   (id, fun state ctx equ args ->
      begin match equ with
        | Some equ -> f ctx state equ args
@@ -55,15 +55,12 @@ let xattr_equals_specific
          error ctx "Unexpected value `%s' for %s" key id;
          state)
 
-let handle_one state ctx handlers xattr =
-  let (id, equ, args) = match xattr with
-    | Ast.WithArguments (id, equ, args) -> (id, equ, Some args)
-    | Ast.WithoutArguments (id, equ) -> (id, equ, None)
-  in try
-    (true, List.assoc id handlers state ctx equ args)
+let handle_one state ctx handlers = let open SimpleAst in fun { name; equals; arguments } ->
+  try
+    (true, List.assoc name handlers state ctx equals arguments)
   with Not_found -> (false, state)
 
-let handle_non_failing_known state ctx handlers xattrs =
+let handle_non_failing_known state ctx handlers (xattrs: SimpleAst.extended_attribute_list) =
   List.fold_left (fun (state, unhandled) xattr ->
                     let (handled, state') = handle_one state (ctx_push_state ctx) handlers xattr
                     in if handled && check_and_merge_state_if_not_failed ctx then
@@ -79,9 +76,7 @@ let handle_all_known state ctx handlers xattrs =
                     else (state, xattr :: unhandled))
     (state, []) xattrs
 
-let get_name = function
-    Ast.WithArguments (name, _, _)
-  | Ast.WithoutArguments (name, _) -> name
+let get_name ({ SimpleAst.name }: SimpleAst.extended_attribute) = name
 
 let partition_attributes l =
   List.partition (fun xattr -> List.mem (get_name xattr) l)

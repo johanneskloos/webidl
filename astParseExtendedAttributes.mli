@@ -7,24 +7,24 @@ val xattr_equals : string ->
   (ctx -> 'a -> string -> 'a) ->
   string * 'a arg_handler
 val xattr_maybe_arguments : string ->
-  (ctx -> 'a -> Ast.arguments option -> 'a) ->
+  (ctx -> 'a -> SimpleAst.arguments option -> 'a) ->
   string * 'a arg_handler
 val xattr_equals_maybe_arguments : string ->
-  (ctx -> 'a -> string -> Ast.arguments option -> 'a) ->
+  (ctx -> 'a -> string -> SimpleAst.arguments option -> 'a) ->
   string * 'a arg_handler
 val xattr_equals_specific : string ->
   (string * ('a -> 'a)) list ->
   string * 'a arg_handler
 val handle_non_failing_known : 'a -> ctx ->
   (string * 'a arg_handler) list ->
-  Ast.extended_attribute_list -> 'a * Ast.extended_attribute_list
+  SimpleAst.extended_attribute_list -> 'a * SimpleAst.extended_attribute_list
 val handle_all_known : 'a -> ctx ->
   (string * 'a arg_handler) list ->
-  Ast.extended_attribute_list -> 'a * Ast.extended_attribute_list
+  SimpleAst.extended_attribute_list -> 'a * SimpleAst.extended_attribute_list
 val partition_attributes : string list ->
-  Ast.extended_attribute_list -> Ast.extended_attribute_list * Ast.extended_attribute_list
+  SimpleAst.extended_attribute_list -> SimpleAst.extended_attribute_list * SimpleAst.extended_attribute_list
 val keep_good_attributes : string list ->
-  Ast.extended_attribute_list -> Ast.extended_attribute_list
+  SimpleAst.extended_attribute_list -> SimpleAst.extended_attribute_list
 val drop_bad_attributes : ctx -> string list ->
-  Ast.extended_attribute_list -> Ast.extended_attribute_list
+  SimpleAst.extended_attribute_list -> SimpleAst.extended_attribute_list
 
