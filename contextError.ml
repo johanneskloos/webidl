@@ -54,10 +54,10 @@ let pp_ctx pp ctx =
     | _ as l -> list ~sep:(const string ", ") string pp l
   in let pp_message pp (msg, ctx) = match msg with
     | Warning msg ->
-        Format.fprintf pp "@[<hovbox 2>Warning: At @[<h>%a@], %s.@]@ "
+        Format.fprintf pp "@[<hov 2>Warning: At @[<h>%a@], %s.@]@ "
           pp_context ctx msg
     | Error msg ->
-        Format.fprintf pp "@[<hovbox 2>ERROR: At @[<h>%a@], %s!@]@ "
+        Format.fprintf pp "@[<hov 2>ERROR: At @[<h>%a@], %s!@]@ "
           pp_context ctx msg
   in vbox (list ~sep:cut pp_message) pp ctx.current_state.message_list
 
