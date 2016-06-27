@@ -4,9 +4,10 @@ let () =
     Arg.parse [
     ] (fun arg -> files := arg :: !files)
       "testSimpleAst filenames";
-    List.iter (fun filename ->
-                 Format.printf "@[<v>%s:@ %a@ @]" filename
-                   (Fmt.list ~sep:Fmt.cut SimpleAst.pp_definition)
-                   (AstSimplify.cleanup (Parse.read_ast_from_file filename)))
-      !files
+    let asts =
+      List.rev_map (fun filename -> Parse.read_ast_from_file filename) !files
+    in let simple_ast = AstSimplify.cleanup (List.concat asts)
+    in Format.printf "@[<v>%a@ @]"
+         (Fmt.list ~sep:Fmt.cut SimpleAst.pp_definition)
+         simple_ast
 
