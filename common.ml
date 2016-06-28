@@ -4,7 +4,12 @@ type value =
   | VFloat of float
   | VNull
   | VString of string
-  [@@deriving show]
+let pp_value pp = function
+  | VBool b -> Fmt.bool pp b
+  | VInt i -> Fmt.int pp i
+  | VFloat f -> Fmt.float pp f
+  | VString s -> Fmt.string pp s
+  | VNull -> Fmt.string pp "null"
 
 type int_length = IShort | ILong | ILongLong [@@deriving show]
 type int_type = { unsigned: bool; length: int_length } [@@deriving show]

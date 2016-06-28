@@ -2,6 +2,7 @@ open Common
 open Ast
 
 let pp_sconst s = Fmt.const Fmt.string s
+let comma_sep = Fmt.suffix Fmt.cut (pp_sconst ",")
 
 type scoped_name = NamePath of string list | NameBuiltin of string
 let pp_scoped_name pp = function
@@ -38,7 +39,7 @@ let rec pp_type_ pp = function
   | TFloat { unrestricted; double } ->
       if unrestricted then Fmt.string pp "unrestricted ";
       if double then Fmt.string pp "double" else Fmt.string pp "single"
-  | TString -> Fmt.string pp "string "
+  | TString -> Fmt.string pp "string"
   | TNamed n -> pp_scoped_name pp n
   | TSequence t -> Fmt.string pp "sequence<"; pp_type_ pp t; Fmt.string pp ">"
   | TObject -> Fmt.string pp "object"
@@ -66,10 +67,10 @@ let rec fmt_extended_attribute pp { name; equals; arguments } =
     | Some equ, Some args  ->
         Fmt.string pp name; Fmt.string pp "="; Fmt.string pp equ;
         pp_arguments pp args
-and pp_extended_attribute_list pp =
-  Fmt.list ~sep:(pp_sconst ",") fmt_extended_attribute pp
+and pp_extended_attribute_list pp l =
+  Fmt.list ~sep:comma_sep fmt_extended_attribute pp l; Fmt.cut pp ()
 and pp_arguments pp =
-  Fmt.parens (Fmt.list ~sep:(pp_sconst ",")
+  Fmt.parens (Fmt.list ~sep:comma_sep
     (fun pp (arg, attrs) ->
        if attrs <> [] then
          Fmt.brackets pp_extended_attribute_list pp attrs;
@@ -86,19 +87,21 @@ and pp_argument pp = function
       Fmt.pf pp "%a... %s" pp_type_ type_ name
 
 let pp_with_attributes pp_body pp (body, attrs) =
-  if attrs <> [] then
+  if attrs <> [] then begin
     Fmt.brackets pp_extended_attribute_list pp attrs;
+    Fmt.cut pp ()
+  end;
   pp_body pp body
 
 type global_const = { type_: type_; name: scoped_name; value: value }
 let pp_global_const pp { type_; name; value } =
-  Fmt.pf pp "const %a %a = %a;@ " pp_type_ type_ pp_scoped_name name pp_value value
+  Fmt.pf pp "const %a %a = %a;" pp_type_ type_ pp_scoped_name name pp_value value
 type const = { type_: type_; name: string; value: value }
 let pp_const pp { type_; name; value } =
-  Fmt.pf pp "const %a %s = %a;@ " pp_type_ type_ name pp_value value
+  Fmt.pf pp "const %a %s = %a;" pp_type_ type_ name pp_value value
 type exception_field = { type_: type_; name: string }
 let pp_exception_field pp { type_; name } =
-  Fmt.pf pp "%a %s;@ " pp_type_ type_ name
+  Fmt.pf pp "%a %s;" pp_type_ type_ name
 type exception_member = EConst of const | EField of exception_field
 let pp_exception_member pp = function
   | EConst c -> pp_const pp c
@@ -113,8 +116,8 @@ let pp_operation pp { return_type; name; arguments; raises } =
   Fmt.pf pp "@[<hov 2>%a %a%a" pp_type_ return_type
     (Fmt.option ~none:Fmt.nop Fmt.string) name pp_arguments arguments;
   if raises <> [] then
-    Fmt.pf pp " raises (%a)" (Fmt.list ~sep:(pp_sconst ",") pp_scoped_name) raises;
-  Fmt.pf pp "@];@ "
+    Fmt.pf pp "@ raises (%a)" (Fmt.list ~sep:comma_sep pp_scoped_name) raises;
+  Fmt.pf pp "@];"
 
 type qualifier = Ast.qualifier =
   QStatic | QGetter | QSetter | QCreator | QDeleter | QLegacyCaller | QOmittable
@@ -132,7 +135,7 @@ let pp_get_mode pp = function
   | GRaises [] -> ()
   | GRaises exc ->
       Fmt.pf pp "getraises (%a)@ "
-        (Fmt.list ~sep:(pp_sconst ",") pp_scoped_name) exc
+        (Fmt.list ~sep:comma_sep pp_scoped_name) exc
   | GInherits -> Fmt.string pp "inherits getter@ "
 
 type attribute = {
@@ -149,12 +152,12 @@ let pp_attribute pp { inherited; readonly; type_; name; get; set } =
   if readonly then Fmt.pf pp "readonly@ ";
   Fmt.pf pp "%a@ %s%a" pp_type_ type_ name pp_get_mode get;
   if set <> [] then
-    Fmt.pf pp "setraises (%a)@ " (Fmt.list ~sep:(pp_sconst ",") pp_scoped_name) set;
-  Fmt.pf pp "@];@ "
+    Fmt.pf pp "setraises (%a)@ " (Fmt.list ~sep:comma_sep pp_scoped_name) set;
+  Fmt.pf pp "@];"
 
 type stringifier = StringBare | StringAttribute of attribute | StringOperation of operation
 let pp_stringifier pp = function
-  | StringBare -> Fmt.pf pp "stringifier;@ "
+  | StringBare -> Fmt.pf pp "stringifier;"
   | StringAttribute a -> Fmt.pf pp "stringifier %a" pp_attribute a
   | StringOperation o -> Fmt.pf pp "stringifier %a" pp_operation o
 
@@ -177,12 +180,12 @@ type enum = { name: scoped_name; contents: string list }
 let pp_enum pp { name; contents } =
   Fmt.pf pp "@[<hov 2>enum %a { %a }@];@ "
     pp_scoped_name name
-    (Fmt.list ~sep:(pp_sconst ",") (fun pp s -> Fmt.pf pp "\"%s\"" s)) contents
+    (Fmt.list ~sep:comma_sep (fun pp s -> Fmt.pf pp "\"%s\"" s)) contents
 
 type inheritance = scoped_name list
 let pp_inheritance pp = function
   | [] -> ()
-  | inh -> Fmt.pf pp ": @[<hov>%a@]" (Fmt.list ~sep:(pp_sconst ",") pp_scoped_name) inh
+  | inh -> Fmt.pf pp ": @[<hov>%a@]" (Fmt.list ~sep:comma_sep pp_scoped_name) inh
 
 type exception_members = exception_member with_attributes list
 let pp_exception_members =
@@ -233,7 +236,7 @@ type interface_members = interface_member with_attributes list
 let pp_interface_members = Fmt.list ~sep:Fmt.cut (pp_with_attributes pp_interface_member)
 type interface = { name: scoped_name; inheritance: inheritance; members: interface_members }
 let pp_interface pp { name; inheritance; members } =
-  Fmt.pf pp "@[<v 2>interface %a@[<hov>%a@] {@ %a}@];@ "
+  Fmt.pf pp "@[<v>interface %a@[<hov>%a@] {@ @[<v2>  %a@]@ }@];@ "
     pp_scoped_name name
     pp_inheritance inheritance
     pp_interface_members members
