@@ -52,10 +52,10 @@ let rec pp_type_ pp = function
 
 type extended_attribute =
     { name: string; equals: string option; arguments: arguments option }
-      and extended_attribute_list = extended_attribute list
-                                      and 'a with_attributes = 'a * extended_attribute_list
-                                                                      and arguments = argument with_attributes list
-                                                                                        and argument =
+and extended_attribute_list = extended_attribute list
+and 'a with_attributes = 'a * extended_attribute_list
+and arguments = argument with_attributes list
+and argument =
   | ArgOptional of { type_: type_; name: string; default: value option }
   | ArgRequired of { type_: type_; name: string; multiple: bool }
 
