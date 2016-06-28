@@ -50,7 +50,6 @@ and user_attribute =
   | UAArguments of string * argument list
   | UAArgumentsEquals of string * string * argument list [@@deriving show]
 
-type inheritance_mode = Toplevel | InheritsFrom of string list | ArrayClass [@@deriving show]
 type special_handling = {
   this_lenient : bool;
   this_implicit : bool;
@@ -87,7 +86,7 @@ type stringifer_mode =
   | AttributeStringifier of string * string_behavior * user_attribute list [@@deriving show]
 type constructor = { name : qualified_name; args : argument list; user_attributes: user_attribute list } [@@deriving show]
 type interface = {
-  inheritance_mode : inheritance_mode;
+  inheritance: qualified_name list;
   name : qualified_name;
   consts : constant list;
   attributes : attribute list;
@@ -110,14 +109,14 @@ type dictionary_entry = {
 } [@@deriving show]
 type dictionary = {
   name : qualified_name;
-  inherits_from : qualified_name option;
+  inherits_from : qualified_name list;
   members : dictionary_entry list;
   user_attributes: user_attribute list
 } [@@deriving show]
 type exception_member = { name : string; types : types; user_attributes: user_attribute list } [@@deriving show]
 type exception_ = {
   name : qualified_name;
-  inherits_from : qualified_name option;
+  inherits_from : qualified_name list;
   consts : constant list;
   members : exception_member list;
   not_exposed : bool;
@@ -137,6 +136,7 @@ let pp_qualified_map pp_content =
   in let boxedkvfmt = Fmt.box ~indent:2 kvfmt
   in let fmtmap = Fmt.iter_bindings ~sep:Fmt.cut QNameMap.iter boxedkvfmt
   in Fmt.vbox ~indent:2 fmtmap
+type global_constant = { name: qualified_name; types: types; value: value; user_attributes: user_attribute list } [@@deriving show]
 type definitions = {
   dictionaries : dictionary QNameMap.t [@printer pp_qualified_map pp_dictionary];
   enumerations : enumerate QNameMap.t [@printer pp_qualified_map pp_enumerate];
@@ -144,6 +144,7 @@ type definitions = {
   exceptions : exception_ QNameMap.t [@printer pp_qualified_map pp_exception_];
   callbacks : callback QNameMap.t [@printer pp_qualified_map pp_callback];
   callback_interfaces : interface QNameMap.t [@printer pp_qualified_map pp_interface];
+  constants : global_constant QNameMap.t [@printer pp_qualified_map pp_global_constant];
   implements : (qualified_name * qualified_name) list;
 } [@@deriving show]
 
