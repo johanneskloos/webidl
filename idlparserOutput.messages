@@ -1,873 +1,1257 @@
-main: Callback Identifier Equals Typedef 
+main: Callback Identifier Equals Valuetype 
 ##
-## Ends in an error in state: 259.
+## Ends in an error in state: 269.
 ##
-## callback_rest -> Identifier Equals . return_type LPar argument_list RPar Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
+## callback -> Callback identifier Equals . type_ arguments Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
 ##
 ## The known suffix of the stack is as follows:
-## Identifier Equals 
+## Callback identifier Equals 
 ##
 
-Expected return type for callback.
+Expected interface definition for callback, starting with a type.
 
 main: Callback Identifier Equals Void LPar RPar Void 
 ##
-## Ends in an error in state: 263.
+## Ends in an error in state: 271.
 ##
-## callback_rest -> Identifier Equals return_type LPar argument_list RPar . Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Identifier Equals return_type LPar argument_list RPar 
-##
-
-Expected `;' to end callback definition.
-
-main: Callback Identifier Equals Void LPar Void 
-##
-## Ends in an error in state: 261.
-##
-## callback_rest -> Identifier Equals return_type LPar . argument_list RPar Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
+## callback -> Callback identifier Equals type_ arguments . Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
 ##
 ## The known suffix of the stack is as follows:
-## Identifier Equals return_type LPar 
+## Callback identifier Equals type_ arguments 
 ##
 
-Expected arugment list for callback definition.
+Expected a `;' to end the callback definition.
 
 main: Callback Identifier Equals Void Void 
 ##
-## Ends in an error in state: 260.
+## Ends in an error in state: 270.
 ##
-## callback_rest -> Identifier Equals return_type . LPar argument_list RPar Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
+## callback -> Callback identifier Equals type_ . arguments Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+## type_ -> type_ . LBracket RBracket [ Question LPar LBracket ]
+## type_ -> type_ . Question [ Question LPar LBracket ]
 ##
 ## The known suffix of the stack is as follows:
-## Identifier Equals return_type 
+## Callback identifier Equals type_ 
 ##
 
-Expected argument list for callback definition, starting with `('.
+Expected interface definition for callback, namely an argument list.
 
 main: Callback Identifier Void 
 ##
-## Ends in an error in state: 258.
+## Ends in an error in state: 268.
 ##
-## callback_rest -> Identifier . Equals return_type LPar argument_list RPar Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
+## callback -> Callback identifier . Equals type_ arguments Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
 ##
 ## The known suffix of the stack is as follows:
-## Identifier 
+## Callback identifier 
 ##
 
-Expected '=' followed by a function type for callback definition.
+Expected `=' in a callback definition.
 
 main: Callback Void 
 ##
-## Ends in an error in state: 257.
+## Ends in an error in state: 266.
 ##
-## callback_or_interface -> Callback . callback_rest_or_interface [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Callback 
-##
-
-Expected `Interface' or a callback definition.
-
-main: Dictionary Identifier Colon Identifier Void 
-##
-## Ends in an error in state: 252.
-##
-## dictionary -> Dictionary Identifier inheritance . LBrace dictionary_members RBrace Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
+## callback -> Callback . identifier Equals type_ arguments Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+## definition -> extended_attribute_list Callback . interface [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
 ##
 ## The known suffix of the stack is as follows:
-## Dictionary Identifier inheritance 
+## extended_attribute_list Callback 
 ##
 
-Expected a list of dictionary members, starting with `{'.
+Expected a callback or callback interface definition.
 
-main: Dictionary Identifier LBrace LBracket RBracket Void 
+main: Const LBrace Valuetype 
 ##
-## Ends in an error in state: 199.
+## Ends in an error in state: 18.
 ##
-## single_dictionary_member -> extended_attribute_list . dictionary_member [ Unsigned Unrestricted Short Sequence RBrace Octet Object Long LPar LBracket Identifier Float Double Date DOMString Byte Boolean Any ]
+## type_ -> LBrace . separated_nonempty_list(OR,type_) RBrace [ Valuetype Semicolon RBrace Question Partial Object OR Module LPar LBracket Identifier Gt Exception Enum Ellipsis Dictionary DOMString Callback Attribute ]
 ##
 ## The known suffix of the stack is as follows:
-## extended_attribute_list 
+## LBrace 
 ##
 
-Expected a dictionary member, given as a string.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Dictionary Identifier LBrace RBrace Void 
+main: Const LBrace Void OR Valuetype 
 ##
-## Ends in an error in state: 255.
+## Ends in an error in state: 32.
 ##
-## dictionary -> Dictionary Identifier inheritance LBrace dictionary_members RBrace . Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
+## separated_nonempty_list(OR,type_) -> type_ OR . separated_nonempty_list(OR,type_) [ RBrace ]
 ##
 ## The known suffix of the stack is as follows:
-## Dictionary Identifier inheritance LBrace dictionary_members RBrace 
+## type_ OR 
 ##
 
-Expected `;' to end the dictionary definition.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Dictionary Identifier LBrace Short Identifier Equals False Void 
+main: Const LBrace Void Void 
 ##
-## Ends in an error in state: 202.
+## Ends in an error in state: 30.
 ##
-## dictionary_member -> type_ Identifier default . Semicolon [ Unsigned Unrestricted Short Sequence RBrace Octet Object Long LPar LBracket Identifier Float Double Date DOMString Byte Boolean Any ]
-##
-## The known suffix of the stack is as follows:
-## type_ Identifier default 
-##
-
-Expected `;' to end the dictionary member definition.
-
-main: Dictionary Identifier LBrace Short Identifier Equals Void 
-##
-## Ends in an error in state: 91.
-##
-## option(__anonymous_0) -> Equals . default_value [ Semicolon RPar Comma ]
-##
-## The known suffix of the stack is as follows:
-## Equals 
-##
-
-Expected a default value after a `='.
-
-main: Dictionary Identifier LBrace Short Identifier Semicolon Void 
-##
-## Ends in an error in state: 197.
-##
-## list(single_dictionary_member) -> single_dictionary_member . list(single_dictionary_member) [ RBrace ]
-##
-## The known suffix of the stack is as follows:
-## single_dictionary_member 
-##
-
-Expected more dictionary members, or `}'.
-
-main: Dictionary Identifier LBrace Short Identifier Void 
-##
-## Ends in an error in state: 201.
-##
-## dictionary_member -> type_ Identifier . default Semicolon [ Unsigned Unrestricted Short Sequence RBrace Octet Object Long LPar LBracket Identifier Float Double Date DOMString Byte Boolean Any ]
-##
-## The known suffix of the stack is as follows:
-## type_ Identifier 
-##
-
-Expected a value for the dictionary member.
-
-main: Dictionary Identifier LBrace Short Unrestricted 
-##
-## Ends in an error in state: 200.
-##
-## dictionary_member -> type_ . Identifier default Semicolon [ Unsigned Unrestricted Short Sequence RBrace Octet Object Long LPar LBracket Identifier Float Double Date DOMString Byte Boolean Any ]
+## separated_nonempty_list(OR,type_) -> type_ . [ RBrace ]
+## separated_nonempty_list(OR,type_) -> type_ . OR separated_nonempty_list(OR,type_) [ RBrace ]
+## type_ -> type_ . LBracket RBracket [ RBrace Question OR LBracket ]
+## type_ -> type_ . Question [ RBrace Question OR LBracket ]
 ##
 ## The known suffix of the stack is as follows:
 ## type_ 
 ##
-## WARNING: This example involves spurious reductions.
-## This implies that, although the LR(1) items shown above provide an
-## accurate view of the past (what has been recognized so far), they
-## may provide an INCOMPLETE view of the future (what was expected next).
-## In state 50, spurious reduction of production type_suffix -> 
-## In state 51, spurious reduction of production non_any_type -> primitive_type type_suffix 
-## In state 67, spurious reduction of production single_type -> non_any_type 
-## In state 66, spurious reduction of production type_ -> single_type 
-##
 
-Expected an identifier for the dictionary member.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Dictionary Identifier LBrace Void 
+main: Const Long Void 
 ##
-## Ends in an error in state: 253.
+## Ends in an error in state: 42.
 ##
-## dictionary -> Dictionary Identifier inheritance LBrace . dictionary_members RBrace Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
+## integer_type -> boption(Unsigned) Long . [ Valuetype Semicolon RBrace Question Partial Object OR Module LPar LBracket Identifier Gt Exception Enum Ellipsis Dictionary DOMString Callback Attribute ]
+## integer_type -> boption(Unsigned) Long . Long [ Valuetype Semicolon RBrace Question Partial Object OR Module LPar LBracket Identifier Gt Exception Enum Ellipsis Dictionary DOMString Callback Attribute ]
 ##
 ## The known suffix of the stack is as follows:
-## Dictionary Identifier inheritance LBrace 
+## boption(Unsigned) Long 
 ##
 
-Expected dictionary members.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Dictionary Identifier Void 
+main: Const Sequence Lt Valuetype 
 ##
-## Ends in an error in state: 251.
+## Ends in an error in state: 15.
 ##
-## dictionary -> Dictionary Identifier . inheritance LBrace dictionary_members RBrace Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Dictionary Identifier 
-##
-
-Expected an inheritance specification, or a list of dictionary members started by `{'.
-
-main: Dictionary Void 
-##
-## Ends in an error in state: 250.
-##
-## dictionary -> Dictionary . Identifier inheritance LBrace dictionary_members RBrace Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
+## type_ -> Sequence Lt . type_ Gt [ Valuetype Semicolon RBrace Question Partial Object OR Module LPar LBracket Identifier Gt Exception Enum Ellipsis Dictionary DOMString Callback Attribute ]
 ##
 ## The known suffix of the stack is as follows:
-## Dictionary 
+## Sequence Lt 
 ##
 
-Expected an identifier for the dictionary.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Enum Identifier LBrace String Comma Void 
+main: Const Sequence Lt Void Void 
 ##
-## Ends in an error in state: 245.
+## Ends in an error in state: 51.
 ##
-## separated_nonempty_list(Comma,String) -> String Comma . separated_nonempty_list(Comma,String) [ RBrace ]
+## type_ -> Sequence Lt type_ . Gt [ Valuetype Semicolon RBrace Question Partial Object OR Module LPar LBracket Identifier Gt Exception Enum Ellipsis Dictionary DOMString Callback Attribute ]
+## type_ -> type_ . LBracket RBracket [ Question LBracket Gt ]
+## type_ -> type_ . Question [ Question LBracket Gt ]
 ##
 ## The known suffix of the stack is as follows:
-## String Comma 
+## Sequence Lt type_ 
 ##
 
-Expected a list of comma-separated strings, followed by `}'.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Enum Identifier LBrace String RBrace Void 
+main: Const Sequence Void 
 ##
-## Ends in an error in state: 248.
+## Ends in an error in state: 14.
 ##
-## enum -> Enum Identifier LBrace separated_nonempty_list(Comma,String) RBrace . Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
+## type_ -> Sequence . Lt type_ Gt [ Valuetype Semicolon RBrace Question Partial Object OR Module LPar LBracket Identifier Gt Exception Enum Ellipsis Dictionary DOMString Callback Attribute ]
 ##
 ## The known suffix of the stack is as follows:
-## Enum Identifier LBrace separated_nonempty_list(Comma,String) RBrace 
+## Sequence 
 ##
 
-Expected `;' to end the enumeration.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Enum Identifier LBrace String Void 
+main: Const Unrestricted Dictionary 
 ##
-## Ends in an error in state: 244.
+## Ends in an error in state: 44.
 ##
-## separated_nonempty_list(Comma,String) -> String . [ RBrace ]
-## separated_nonempty_list(Comma,String) -> String . Comma separated_nonempty_list(Comma,String) [ RBrace ]
+## float_type -> boption(Unrestricted) . Float [ Valuetype Semicolon RBrace Question Partial Object OR Module LPar LBracket Identifier Gt Exception Enum Ellipsis Dictionary DOMString Callback Attribute ]
+## float_type -> boption(Unrestricted) . Double [ Valuetype Semicolon RBrace Question Partial Object OR Module LPar LBracket Identifier Gt Exception Enum Ellipsis Dictionary DOMString Callback Attribute ]
 ##
 ## The known suffix of the stack is as follows:
-## String 
+## boption(Unrestricted) 
 ##
 
-Expected the remainder of a list of strings (starting with `,'), or a `}' to end the list.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Enum Identifier LBrace Void 
+main: Const Unsigned Void 
 ##
-## Ends in an error in state: 243.
+## Ends in an error in state: 40.
 ##
-## enum -> Enum Identifier LBrace . separated_nonempty_list(Comma,String) RBrace Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
+## integer_type -> boption(Unsigned) . Short [ Valuetype Semicolon RBrace Question Partial Object OR Module LPar LBracket Identifier Gt Exception Enum Ellipsis Dictionary DOMString Callback Attribute ]
+## integer_type -> boption(Unsigned) . Long [ Valuetype Semicolon RBrace Question Partial Object OR Module LPar LBracket Identifier Gt Exception Enum Ellipsis Dictionary DOMString Callback Attribute ]
+## integer_type -> boption(Unsigned) . Long Long [ Valuetype Semicolon RBrace Question Partial Object OR Module LPar LBracket Identifier Gt Exception Enum Ellipsis Dictionary DOMString Callback Attribute ]
 ##
 ## The known suffix of the stack is as follows:
-## Enum Identifier LBrace 
+## boption(Unsigned) 
 ##
 
-Expected a list of comma-separated strings, followed by `}'.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Enum Identifier Void 
+main: Const Valuetype 
 ##
-## Ends in an error in state: 242.
+## Ends in an error in state: 124.
 ##
-## enum -> Enum Identifier . LBrace separated_nonempty_list(Comma,String) RBrace Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Enum Identifier 
-##
-
-Expected a list of comma-separated strings, starting with a `{'.
-
-main: Enum Void 
-##
-## Ends in an error in state: 241.
-##
-## enum -> Enum . Identifier LBrace separated_nonempty_list(Comma,String) RBrace Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Enum 
-##
-
-Expected an identifier for the enumeration.
-
-main: Exception Identifier Colon Identifier Void 
-##
-## Ends in an error in state: 228.
-##
-## exception_ -> Exception Identifier inheritance . LBrace exception_members RBrace Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Exception Identifier inheritance 
-##
-
-Expected an exception specification, starting with `{'.
-
-main: Exception Identifier LBrace LBracket RBracket Void 
-##
-## Ends in an error in state: 231.
-##
-## list(__anonymous_1) -> extended_attribute_list . exception_member list(__anonymous_1) [ RBrace ]
-##
-## The known suffix of the stack is as follows:
-## extended_attribute_list 
-##
-
-Expecting an exception member specification.
-
-main: Exception Identifier LBrace RBrace Void 
-##
-## Ends in an error in state: 239.
-##
-## exception_ -> Exception Identifier inheritance LBrace exception_members RBrace . Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Exception Identifier inheritance LBrace exception_members RBrace 
-##
-
-Expected a `;' to end the exception specification.
-
-main: Exception Identifier LBrace Short Identifier Semicolon Void 
-##
-## Ends in an error in state: 235.
-##
-## list(__anonymous_1) -> extended_attribute_list exception_member . list(__anonymous_1) [ RBrace ]
-##
-## The known suffix of the stack is as follows:
-## extended_attribute_list exception_member 
-##
-
-Expected more exception members, or `}'.
-
-main: Exception Identifier LBrace Short Identifier Void 
-##
-## Ends in an error in state: 233.
-##
-## exception_member -> type_ Identifier . Semicolon [ Unsigned Unrestricted Short Sequence RBrace Octet Object Long LPar LBracket Identifier Float Double Date DOMString Const Byte Boolean Any ]
-##
-## The known suffix of the stack is as follows:
-## type_ Identifier 
-##
-
-Expected a `;' to end the exception member specification.
-
-main: Exception Identifier LBrace Short Unrestricted 
-##
-## Ends in an error in state: 232.
-##
-## exception_member -> type_ . Identifier Semicolon [ Unsigned Unrestricted Short Sequence RBrace Octet Object Long LPar LBracket Identifier Float Double Date DOMString Const Byte Boolean Any ]
-##
-## The known suffix of the stack is as follows:
-## type_ 
-##
-## WARNING: This example involves spurious reductions.
-## This implies that, although the LR(1) items shown above provide an
-## accurate view of the past (what has been recognized so far), they
-## may provide an INCOMPLETE view of the future (what was expected next).
-## In state 50, spurious reduction of production type_suffix -> 
-## In state 51, spurious reduction of production non_any_type -> primitive_type type_suffix 
-## In state 67, spurious reduction of production single_type -> non_any_type 
-## In state 66, spurious reduction of production type_ -> single_type 
-##
-
-Expected an identifier for the exception member.
-
-main: Exception Identifier LBrace Void 
-##
-## Ends in an error in state: 229.
-##
-## exception_ -> Exception Identifier inheritance LBrace . exception_members RBrace Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Exception Identifier inheritance LBrace 
-##
-
-Expected more exception members, or `}'.
-
-main: Exception Identifier Void 
-##
-## Ends in an error in state: 227.
-##
-## exception_ -> Exception Identifier . inheritance LBrace exception_members RBrace Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Exception Identifier 
-##
-
-Expected an inheritance specification, or `{' followed by a list of exception members.
-
-main: Exception Void 
-##
-## Ends in an error in state: 226.
-##
-## exception_ -> Exception . Identifier inheritance LBrace exception_members RBrace Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Exception 
-##
-
-Expected an identifier for the execption.
-
-main: Identifier Implements Identifier Void 
-##
-## Ends in an error in state: 224.
-##
-## implements_statement -> Identifier Implements Identifier . Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Identifier Implements Identifier 
-##
-
-Expected a `;' to finish the implements statement.
-
-main: Identifier Implements Void 
-##
-## Ends in an error in state: 223.
-##
-## implements_statement -> Identifier Implements . Identifier Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Identifier Implements 
-##
-
-Expected the identifier of an implemented interface.
-
-main: Identifier Void 
-##
-## Ends in an error in state: 222.
-##
-## implements_statement -> Identifier . Implements Identifier Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Identifier 
-##
-
-Expected `implements'.
-
-main: Interface Identifier Colon Identifier Void 
-##
-## Ends in an error in state: 217.
-##
-## interface -> Interface Identifier inheritance . LBrace interface_members RBrace Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Interface Identifier inheritance 
-##
-
-Expected `{', followed by interface members.
-
-main: Interface Identifier Colon Void 
-##
-## Ends in an error in state: 214.
-##
-## option(__anonymous_2) -> Colon . Identifier [ LBrace ]
-##
-## The known suffix of the stack is as follows:
-## Colon 
-##
-
-Expected a super interface identifier.
-
-main: Interface Identifier LBrace Attribute Short Identifier Void 
-##
-## Ends in an error in state: 161.
-##
-## attribute -> option(Inherit) option(ReadOnly) Attribute type_ Identifier . Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Octet Object Long LegacyCaller LPar LBracket Inherit Identifier Getter Float Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
-##
-## The known suffix of the stack is as follows:
-## option(Inherit) option(ReadOnly) Attribute type_ Identifier 
-##
-
-Expected a `;' to end the attribute specification.
-
-main: Interface Identifier LBrace Attribute Short Unrestricted 
-##
-## Ends in an error in state: 160.
-##
-## attribute -> option(Inherit) option(ReadOnly) Attribute type_ . Identifier Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Octet Object Long LegacyCaller LPar LBracket Inherit Identifier Getter Float Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
-##
-## The known suffix of the stack is as follows:
-## option(Inherit) option(ReadOnly) Attribute type_ 
-##
-## WARNING: This example involves spurious reductions.
-## This implies that, although the LR(1) items shown above provide an
-## accurate view of the past (what has been recognized so far), they
-## may provide an INCOMPLETE view of the future (what was expected next).
-## In state 50, spurious reduction of production type_suffix -> 
-## In state 51, spurious reduction of production non_any_type -> primitive_type type_suffix 
-## In state 67, spurious reduction of production single_type -> non_any_type 
-## In state 66, spurious reduction of production type_ -> single_type 
-##
-
-Expected an indentifier for the attribute.
-
-main: Interface Identifier LBrace Attribute Void 
-##
-## Ends in an error in state: 159.
-##
-## attribute -> option(Inherit) option(ReadOnly) Attribute . type_ Identifier Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Octet Object Long LegacyCaller LPar LBracket Inherit Identifier Getter Float Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
-##
-## The known suffix of the stack is as follows:
-## option(Inherit) option(ReadOnly) Attribute 
-##
-
-Expected a type for the attribute.
-
-main: Interface Identifier LBrace Const Identifier Void 
-##
-## Ends in an error in state: 172.
-##
-## const_type -> Identifier . null [ Identifier ]
-##
-## The known suffix of the stack is as follows:
-## Identifier 
-##
-
-Expected `?' or a constant identifier.
-
-main: Interface Identifier LBrace Const Short Identifier Equals True Void 
-##
-## Ends in an error in state: 179.
-##
-## const -> Const const_type Identifier Equals const_value . Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Octet Object Long LegacyCaller LPar LBracket Inherit Identifier Getter Float Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
-##
-## The known suffix of the stack is as follows:
-## Const const_type Identifier Equals const_value 
-##
-
-Expected a `;' to end the constant definition.
-
-main: Interface Identifier LBrace Const Short Identifier Equals Void 
-##
-## Ends in an error in state: 178.
-##
-## const -> Const const_type Identifier Equals . const_value Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Octet Object Long LegacyCaller LPar LBracket Inherit Identifier Getter Float Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
-##
-## The known suffix of the stack is as follows:
-## Const const_type Identifier Equals 
-##
-
-Expected a value for the constant.
-
-main: Interface Identifier LBrace Const Short Identifier Void 
-##
-## Ends in an error in state: 177.
-##
-## const -> Const const_type Identifier . Equals const_value Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Octet Object Long LegacyCaller LPar LBracket Inherit Identifier Getter Float Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
-##
-## The known suffix of the stack is as follows:
-## Const const_type Identifier 
-##
-
-Expected `=' followed by a value for the constant.
-
-main: Interface Identifier LBrace Const Short Question Void 
-##
-## Ends in an error in state: 176.
-##
-## const -> Const const_type . Identifier Equals const_value Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Octet Object Long LegacyCaller LPar LBracket Inherit Identifier Getter Float Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
-##
-## The known suffix of the stack is as follows:
-## Const const_type 
-##
-
-Expeced a name for the constant.
-
-main: Interface Identifier LBrace Const Short Void 
-##
-## Ends in an error in state: 174.
-##
-## const_type -> primitive_type . null [ Identifier ]
-##
-## The known suffix of the stack is as follows:
-## primitive_type 
-##
-
-Expected a `?' or an identifier for the constant.
-
-main: Interface Identifier LBrace Const Void 
-##
-## Ends in an error in state: 171.
-##
-## const -> Const . const_type Identifier Equals const_value Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Octet Object Long LegacyCaller LPar LBracket Inherit Identifier Getter Float Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
+## const -> Const . type_ identifier Equals const_value Semicolon [ Void Valuetype Unsigned Unrestricted Typedef Stringifier Static Short Setter Sequence ReadOnly RBrace Partial Omittable Octet Object Module Long LegacyCaller LBracket LBrace Interface Inherit Identifier Getter Float Exception Enum EOF DoubleColon Double Dictionary Deleter Date DOMString Creator Const Callback Byte Boolean Attribute Any ]
 ##
 ## The known suffix of the stack is as follows:
 ## Const 
 ##
 
-Expected a constant type.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Interface Identifier LBrace Inherit Void 
+main: Const Void Identifier Equals Minus Void 
 ##
-## Ends in an error in state: 156.
+## Ends in an error in state: 89.
 ##
-## attribute -> option(Inherit) . option(ReadOnly) Attribute type_ Identifier Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Octet Object Long LegacyCaller LPar LBracket Inherit Identifier Getter Float Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
+## const_value -> Minus . Infinity [ Semicolon RPar Comma ]
 ##
 ## The known suffix of the stack is as follows:
-## option(Inherit) 
+## Minus 
 ##
 
-Expected `ReadOnly' or `Attribute'.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Interface Identifier LBrace LBracket RBracket Typedef 
+main: Const Void Identifier Equals True Void 
 ##
-## Ends in an error in state: 142.
+## Ends in an error in state: 128.
 ##
-## interface_single_member -> extended_attribute_list . interface_member [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Octet Object Long LegacyCaller LPar LBracket Inherit Identifier Getter Float Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
+## const -> Const type_ identifier Equals const_value . Semicolon [ Void Valuetype Unsigned Unrestricted Typedef Stringifier Static Short Setter Sequence ReadOnly RBrace Partial Omittable Octet Object Module Long LegacyCaller LBracket LBrace Interface Inherit Identifier Getter Float Exception Enum EOF DoubleColon Double Dictionary Deleter Date DOMString Creator Const Callback Byte Boolean Attribute Any ]
 ##
 ## The known suffix of the stack is as follows:
-## extended_attribute_list 
+## Const type_ identifier Equals const_value 
 ##
 
-Expected an interface member.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Interface Identifier LBrace RBrace Void 
+main: Const Void Identifier Equals Void 
 ##
-## Ends in an error in state: 220.
+## Ends in an error in state: 127.
 ##
-## interface -> Interface Identifier inheritance LBrace interface_members RBrace . Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
+## const -> Const type_ identifier Equals . const_value Semicolon [ Void Valuetype Unsigned Unrestricted Typedef Stringifier Static Short Setter Sequence ReadOnly RBrace Partial Omittable Octet Object Module Long LegacyCaller LBracket LBrace Interface Inherit Identifier Getter Float Exception Enum EOF DoubleColon Double Dictionary Deleter Date DOMString Creator Const Callback Byte Boolean Attribute Any ]
 ##
 ## The known suffix of the stack is as follows:
-## Interface Identifier inheritance LBrace interface_members RBrace 
+## Const type_ identifier Equals 
 ##
 
-Expected a `;' to end the interface definition.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Interface Identifier LBrace ReadOnly Any 
+main: Const Void Identifier Void 
 ##
-## Ends in an error in state: 158.
+## Ends in an error in state: 126.
 ##
-## attribute -> option(Inherit) option(ReadOnly) . Attribute type_ Identifier Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Octet Object Long LegacyCaller LPar LBracket Inherit Identifier Getter Float Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
+## const -> Const type_ identifier . Equals const_value Semicolon [ Void Valuetype Unsigned Unrestricted Typedef Stringifier Static Short Setter Sequence ReadOnly RBrace Partial Omittable Octet Object Module Long LegacyCaller LBracket LBrace Interface Inherit Identifier Getter Float Exception Enum EOF DoubleColon Double Dictionary Deleter Date DOMString Creator Const Callback Byte Boolean Attribute Any ]
 ##
 ## The known suffix of the stack is as follows:
-## option(Inherit) option(ReadOnly) 
+## Const type_ identifier 
 ##
 
-Expected `Attribute'.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Interface Identifier LBrace Setter Typedef 
+main: Const Void LBracket Void 
 ##
-## Ends in an error in state: 181.
+## Ends in an error in state: 47.
 ##
-## list(special) -> special . list(special) [ Void Unsigned Unrestricted Short Sequence Octet Object Long LPar Identifier Float Double Date DOMString Byte Boolean Any ]
+## type_ -> type_ LBracket . RBracket [ Valuetype Semicolon RBrace Question Partial Object OR Module LPar LBracket Identifier Gt Exception Enum Ellipsis Dictionary DOMString Callback Attribute ]
 ##
 ## The known suffix of the stack is as follows:
-## special 
+## type_ LBracket 
 ##
 
-Expected `getter', `setter', `creator', `deleter', `legacycaller' or a return type.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Interface Identifier LBrace Static Setter 
-##
-## Ends in an error in state: 183.
-##
-## operation -> qualifiers . operation_rest [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Octet Object Long LegacyCaller LPar LBracket Inherit Identifier Getter Float Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
-##
-## The known suffix of the stack is as follows:
-## qualifiers 
-##
-
-Expected a return type.
-
-main: Interface Identifier LBrace Stringifier Semicolon Typedef 
-##
-## Ends in an error in state: 140.
-##
-## list(interface_single_member) -> interface_single_member . list(interface_single_member) [ RBrace ]
-##
-## The known suffix of the stack is as follows:
-## interface_single_member 
-##
-
-Expected more interface members, or `}'.
-
-main: Interface Identifier LBrace Stringifier Typedef 
-##
-## Ends in an error in state: 143.
-##
-## attribute_or_operation -> Stringifier . stringifier_attribute_or_operation [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Octet Object Long LegacyCaller LPar LBracket Inherit Identifier Getter Float Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
-##
-## The known suffix of the stack is as follows:
-## Stringifier 
-##
-
-Expected `;', `attribute' or a return type.
-
-main: Interface Identifier LBrace Typedef 
-##
-## Ends in an error in state: 218.
-##
-## interface -> Interface Identifier inheritance LBrace . interface_members RBrace Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Interface Identifier inheritance LBrace 
-##
-
-Expected interface members, or `}'.
-
-main: Interface Identifier LBrace Void Identifier Void 
-##
-## Ends in an error in state: 151.
-##
-## operation_rest -> return_type option(Identifier) . LPar argument_list RPar Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Octet Object Long LegacyCaller LPar LBracket Inherit Identifier Getter Float Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
-##
-## The known suffix of the stack is as follows:
-## return_type option(Identifier) 
-##
-
-Expected an argument list, starting with `('.
-
-main: Interface Identifier LBrace Void LPar RPar Void 
-##
-## Ends in an error in state: 154.
-##
-## operation_rest -> return_type option(Identifier) LPar argument_list RPar . Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Octet Object Long LegacyCaller LPar LBracket Inherit Identifier Getter Float Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
-##
-## The known suffix of the stack is as follows:
-## return_type option(Identifier) LPar argument_list RPar 
-##
-
-Expected `;' to end the operation definition.
-
-main: Interface Identifier LBrace Void LPar Void 
-##
-## Ends in an error in state: 152.
-##
-## operation_rest -> return_type option(Identifier) LPar . argument_list RPar Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Octet Object Long LegacyCaller LPar LBracket Inherit Identifier Getter Float Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
-##
-## The known suffix of the stack is as follows:
-## return_type option(Identifier) LPar 
-##
-
-Expected an argument list, or `)'.
-
-main: Interface Identifier LBrace Void Void 
-##
-## Ends in an error in state: 149.
-##
-## operation_rest -> return_type . option(Identifier) LPar argument_list RPar Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Octet Object Long LegacyCaller LPar LBracket Inherit Identifier Getter Float Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
-##
-## The known suffix of the stack is as follows:
-## return_type 
-##
-
-Expected an operation identifier, or an argument list starting with `('.
-
-main: Interface Identifier Void 
-##
-## Ends in an error in state: 213.
-##
-## interface -> Interface Identifier . inheritance LBrace interface_members RBrace Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Interface Identifier 
-##
-
-Expected inheritance information, or `{' followed by interface members.
-
-main: Interface Void 
-##
-## Ends in an error in state: 212.
-##
-## interface -> Interface . Identifier inheritance LBrace interface_members RBrace Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Interface 
-##
-
-Expected an interface identifier.
-
-main: LBracket Identifier Comma Void 
+main: Const Void Void 
 ##
 ## Ends in an error in state: 125.
 ##
-## separated_nonempty_list(Comma,extended_attribute) -> extended_attribute Comma . separated_nonempty_list(Comma,extended_attribute) [ RBracket ]
+## const -> Const type_ . identifier Equals const_value Semicolon [ Void Valuetype Unsigned Unrestricted Typedef Stringifier Static Short Setter Sequence ReadOnly RBrace Partial Omittable Octet Object Module Long LegacyCaller LBracket LBrace Interface Inherit Identifier Getter Float Exception Enum EOF DoubleColon Double Dictionary Deleter Date DOMString Creator Const Callback Byte Boolean Attribute Any ]
+## type_ -> type_ . LBracket RBracket [ Question LBracket Identifier ]
+## type_ -> type_ . Question [ Question LBracket Identifier ]
 ##
 ## The known suffix of the stack is as follows:
-## extended_attribute Comma 
+## Const type_ 
 ##
 
-Expected a comma-separated list of extended attributes, or `]'.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: LBracket Identifier Equals Identifier LPar Void 
+main: Dictionary Identifier Colon Identifier RPar 
 ##
-## Ends in an error in state: 114.
+## Ends in an error in state: 261.
 ##
-## extended_attribute_named_arg_list -> Identifier Equals Identifier LPar . argument_list RPar [ RBracket Comma ]
+## dictionary -> Dictionary identifier inheritance . LBrace dictionary_members RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
 ##
 ## The known suffix of the stack is as follows:
-## Identifier Equals Identifier LPar 
-##
-
-Expected an argument list, or `)'.
-
-main: LBracket Identifier Equals Identifier Void 
-##
-## Ends in an error in state: 113.
-##
-## extended_attribute_ident -> Identifier Equals Identifier . [ RBracket Comma ]
-## extended_attribute_named_arg_list -> Identifier Equals Identifier . LPar argument_list RPar [ RBracket Comma ]
-##
-## The known suffix of the stack is as follows:
-## Identifier Equals Identifier 
-##
-
-Expected `,' followed by more extended attribute, `]' or an argument list starting with `('.
-
-main: LBracket Identifier Equals Void 
-##
-## Ends in an error in state: 112.
-##
-## extended_attribute_ident -> Identifier Equals . Identifier [ RBracket Comma ]
-## extended_attribute_named_arg_list -> Identifier Equals . Identifier LPar argument_list RPar [ RBracket Comma ]
-##
-## The known suffix of the stack is as follows:
-## Identifier Equals 
-##
-
-Expected an identifier.
-
-main: LBracket Identifier LPar LBracket RBracket Void 
-##
-## Ends in an error in state: 7.
-##
-## argument -> extended_attribute_list . optional_or_required_argument [ RPar Comma ]
-##
-## The known suffix of the stack is as follows:
-## extended_attribute_list 
-##
-
-Expected an argument specification, maybe including `optional'.
-
-main: LBracket Identifier LPar Optional Short RPar 
-##
-## Ends in an error in state: 69.
-##
-## optional_or_required_argument -> Optional type_ . argument_name default [ RPar Comma ]
-##
-## The known suffix of the stack is as follows:
-## Optional type_ 
+## Dictionary identifier inheritance 
 ##
 ## WARNING: This example involves spurious reductions.
 ## This implies that, although the LR(1) items shown above provide an
 ## accurate view of the past (what has been recognized so far), they
 ## may provide an INCOMPLETE view of the future (what was expected next).
-## In state 50, spurious reduction of production type_suffix -> 
-## In state 51, spurious reduction of production non_any_type -> primitive_type type_suffix 
-## In state 67, spurious reduction of production single_type -> non_any_type 
-## In state 66, spurious reduction of production type_ -> single_type 
+## In state 36, spurious reduction of production scoped_name -> identifier 
+## In state 161, spurious reduction of production separated_nonempty_list(Comma,__anonymous_1(scoped_name)) -> scoped_name 
+## In state 158, spurious reduction of production comma_separated_list(scoped_name) -> separated_nonempty_list(Comma,__anonymous_1(scoped_name)) 
+## In state 226, spurious reduction of production loption(__anonymous_3) -> Colon comma_separated_list(scoped_name) 
+## In state 227, spurious reduction of production inheritance -> loption(__anonymous_3) 
 ##
 
-Expected an argument name.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: LBracket Identifier LPar Optional Short Unrestricted Void 
+main: Dictionary Identifier LBrace LBracket Identifier RBracket Valuetype 
 ##
-## Ends in an error in state: 90.
+## Ends in an error in state: 212.
 ##
-## optional_or_required_argument -> Optional type_ argument_name . default [ RPar Comma ]
+## list(__anonymous_0(dictionary_member)) -> extended_attribute_list . dictionary_member list(__anonymous_0(dictionary_member)) [ RBrace ]
 ##
 ## The known suffix of the stack is as follows:
-## Optional type_ argument_name 
+## extended_attribute_list 
 ##
 
-Expected a default value started by `=', `,' followed by another argument, or `)'.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: LBracket Identifier LPar Optional Void 
+main: Dictionary Identifier LBrace RBrace Void 
 ##
-## Ends in an error in state: 68.
+## Ends in an error in state: 264.
+##
+## dictionary -> Dictionary identifier inheritance LBrace dictionary_members RBrace . Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Dictionary identifier inheritance LBrace dictionary_members RBrace 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Dictionary Identifier LBrace Valuetype 
+##
+## Ends in an error in state: 262.
+##
+## dictionary -> Dictionary identifier inheritance LBrace . dictionary_members RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Dictionary identifier inheritance LBrace 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Dictionary Identifier LBrace Void Identifier Equals False Void 
+##
+## Ends in an error in state: 215.
+##
+## dictionary_member -> type_ identifier default . Semicolon [ Void Unsigned Unrestricted Short Sequence RBrace Octet Object Long LBracket LBrace Identifier Float DoubleColon Double Date DOMString Byte Boolean Any ]
+##
+## The known suffix of the stack is as follows:
+## type_ identifier default 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Dictionary Identifier LBrace Void Identifier Equals Void 
+##
+## Ends in an error in state: 84.
+##
+## option(__anonymous_2) -> Equals . const_value [ Semicolon RPar Comma ]
+##
+## The known suffix of the stack is as follows:
+## Equals 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Dictionary Identifier LBrace Void Identifier Semicolon Valuetype 
+##
+## Ends in an error in state: 217.
+##
+## list(__anonymous_0(dictionary_member)) -> extended_attribute_list dictionary_member . list(__anonymous_0(dictionary_member)) [ RBrace ]
+##
+## The known suffix of the stack is as follows:
+## extended_attribute_list dictionary_member 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Dictionary Identifier LBrace Void Identifier Void 
+##
+## Ends in an error in state: 214.
+##
+## dictionary_member -> type_ identifier . default Semicolon [ Void Unsigned Unrestricted Short Sequence RBrace Octet Object Long LBracket LBrace Identifier Float DoubleColon Double Date DOMString Byte Boolean Any ]
+##
+## The known suffix of the stack is as follows:
+## type_ identifier 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Dictionary Identifier LBrace Void Void 
+##
+## Ends in an error in state: 213.
+##
+## dictionary_member -> type_ . identifier default Semicolon [ Void Unsigned Unrestricted Short Sequence RBrace Octet Object Long LBracket LBrace Identifier Float DoubleColon Double Date DOMString Byte Boolean Any ]
+## type_ -> type_ . LBracket RBracket [ Question LBracket Identifier ]
+## type_ -> type_ . Question [ Question LBracket Identifier ]
+##
+## The known suffix of the stack is as follows:
+## type_ 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Dictionary Identifier Void 
+##
+## Ends in an error in state: 260.
+##
+## dictionary -> Dictionary identifier . inheritance LBrace dictionary_members RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Dictionary identifier 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Dictionary Void 
+##
+## Ends in an error in state: 259.
+##
+## dictionary -> Dictionary . identifier inheritance LBrace dictionary_members RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Dictionary 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: DoubleColon Identifier DoubleColon Void 
+##
+## Ends in an error in state: 23.
+##
+## scoped_name_after_colon -> identifier DoubleColon . scoped_name_after_colon [ Valuetype Semicolon RPar RBrace Question Partial Object OR Module LPar LBracket LBrace Implements Identifier Gt Exception Enum Ellipsis Dictionary DOMString Comma Callback Attribute ]
+##
+## The known suffix of the stack is as follows:
+## identifier DoubleColon 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: DoubleColon Identifier Void 
+##
+## Ends in an error in state: 22.
+##
+## scoped_name_after_colon -> identifier . [ Valuetype Semicolon RPar RBrace Question Partial Object OR Module LPar LBracket LBrace Implements Identifier Gt Exception Enum Ellipsis Dictionary DOMString Comma Callback Attribute ]
+## scoped_name_after_colon -> identifier . DoubleColon scoped_name_after_colon [ Valuetype Semicolon RPar RBrace Question Partial Object OR Module LPar LBracket LBrace Implements Identifier Gt Exception Enum Ellipsis Dictionary DOMString Comma Callback Attribute ]
+##
+## The known suffix of the stack is as follows:
+## identifier 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: DoubleColon Void 
+##
+## Ends in an error in state: 19.
+##
+## scoped_name -> DoubleColon . scoped_name_after_colon [ Valuetype Semicolon RPar RBrace Question Partial Object OR Module LPar LBracket LBrace Implements Identifier Gt Exception Enum Ellipsis Dictionary DOMString Comma Callback Attribute ]
+##
+## The known suffix of the stack is as follows:
+## DoubleColon 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Enum Identifier LBrace String Comma Void 
+##
+## Ends in an error in state: 253.
+##
+## separated_nonempty_list(Comma,__anonymous_1(String)) -> String Comma . separated_nonempty_list(Comma,__anonymous_1(String)) [ RBrace ]
+##
+## The known suffix of the stack is as follows:
+## String Comma 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Enum Identifier LBrace String RBrace Void 
+##
+## Ends in an error in state: 257.
+##
+## enum -> Enum identifier LBrace comma_separated_list(String) RBrace . Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Enum identifier LBrace comma_separated_list(String) RBrace 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Enum Identifier LBrace String Void 
+##
+## Ends in an error in state: 252.
+##
+## separated_nonempty_list(Comma,__anonymous_1(String)) -> String . [ RBrace ]
+## separated_nonempty_list(Comma,__anonymous_1(String)) -> String . Comma separated_nonempty_list(Comma,__anonymous_1(String)) [ RBrace ]
+##
+## The known suffix of the stack is as follows:
+## String 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Enum Identifier LBrace Void 
+##
+## Ends in an error in state: 251.
+##
+## enum -> Enum identifier LBrace . comma_separated_list(String) RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Enum identifier LBrace 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Enum Identifier Void 
+##
+## Ends in an error in state: 250.
+##
+## enum -> Enum identifier . LBrace comma_separated_list(String) RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Enum identifier 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Enum Void 
+##
+## Ends in an error in state: 249.
+##
+## enum -> Enum . identifier LBrace comma_separated_list(String) RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Enum 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Exception Identifier Colon Identifier RPar 
+##
+## Ends in an error in state: 235.
+##
+## exception_ -> Exception identifier inheritance . LBrace exception_members RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Exception identifier inheritance 
+##
+## WARNING: This example involves spurious reductions.
+## This implies that, although the LR(1) items shown above provide an
+## accurate view of the past (what has been recognized so far), they
+## may provide an INCOMPLETE view of the future (what was expected next).
+## In state 36, spurious reduction of production scoped_name -> identifier 
+## In state 161, spurious reduction of production separated_nonempty_list(Comma,__anonymous_1(scoped_name)) -> scoped_name 
+## In state 158, spurious reduction of production comma_separated_list(scoped_name) -> separated_nonempty_list(Comma,__anonymous_1(scoped_name)) 
+## In state 226, spurious reduction of production loption(__anonymous_3) -> Colon comma_separated_list(scoped_name) 
+## In state 227, spurious reduction of production inheritance -> loption(__anonymous_3) 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Exception Identifier LBrace LBracket Identifier RBracket Valuetype 
+##
+## Ends in an error in state: 239.
+##
+## list(__anonymous_0(exception_member)) -> extended_attribute_list . exception_member list(__anonymous_0(exception_member)) [ RBrace ]
+##
+## The known suffix of the stack is as follows:
+## extended_attribute_list 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Exception Identifier LBrace RBrace Void 
+##
+## Ends in an error in state: 247.
+##
+## exception_ -> Exception identifier inheritance LBrace exception_members RBrace . Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Exception identifier inheritance LBrace exception_members RBrace 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Exception Identifier LBrace Valuetype 
+##
+## Ends in an error in state: 236.
+##
+## exception_ -> Exception identifier inheritance LBrace . exception_members RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Exception identifier inheritance LBrace 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Exception Identifier LBrace Void Identifier Semicolon Valuetype 
+##
+## Ends in an error in state: 243.
+##
+## list(__anonymous_0(exception_member)) -> extended_attribute_list exception_member . list(__anonymous_0(exception_member)) [ RBrace ]
+##
+## The known suffix of the stack is as follows:
+## extended_attribute_list exception_member 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Exception Identifier LBrace Void Identifier Void 
+##
+## Ends in an error in state: 241.
+##
+## exception_member -> type_ identifier . Semicolon [ Void Unsigned Unrestricted Short Sequence RBrace Octet Object Long LBracket LBrace Identifier Float DoubleColon Double Date DOMString Const Byte Boolean Any ]
+##
+## The known suffix of the stack is as follows:
+## type_ identifier 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Exception Identifier LBrace Void Void 
+##
+## Ends in an error in state: 240.
+##
+## exception_member -> type_ . identifier Semicolon [ Void Unsigned Unrestricted Short Sequence RBrace Octet Object Long LBracket LBrace Identifier Float DoubleColon Double Date DOMString Const Byte Boolean Any ]
+## type_ -> type_ . LBracket RBracket [ Question LBracket Identifier ]
+## type_ -> type_ . Question [ Question LBracket Identifier ]
+##
+## The known suffix of the stack is as follows:
+## type_ 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Exception Identifier Void 
+##
+## Ends in an error in state: 234.
+##
+## exception_ -> Exception identifier . inheritance LBrace exception_members RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Exception identifier 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Exception Void 
+##
+## Ends in an error in state: 233.
+##
+## exception_ -> Exception . identifier inheritance LBrace exception_members RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Exception 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Identifier DoubleColon Void 
+##
+## Ends in an error in state: 37.
+##
+## scoped_name -> identifier DoubleColon . scoped_name_after_colon [ Valuetype Semicolon RPar RBrace Question Partial Object OR Module LPar LBracket LBrace Implements Identifier Gt Exception Enum Ellipsis Dictionary DOMString Comma Callback Attribute ]
+##
+## The known suffix of the stack is as follows:
+## identifier DoubleColon 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Identifier Implements Identifier Valuetype 
+##
+## Ends in an error in state: 134.
+##
+## implements_statement -> scoped_name Implements scoped_name . Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## scoped_name Implements scoped_name 
+##
+## WARNING: This example involves spurious reductions.
+## This implies that, although the LR(1) items shown above provide an
+## accurate view of the past (what has been recognized so far), they
+## may provide an INCOMPLETE view of the future (what was expected next).
+## In state 36, spurious reduction of production scoped_name -> identifier 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Identifier Implements Void 
+##
+## Ends in an error in state: 133.
+##
+## implements_statement -> scoped_name Implements . scoped_name Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## scoped_name Implements 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Identifier Valuetype 
+##
+## Ends in an error in state: 132.
+##
+## implements_statement -> scoped_name . Implements scoped_name Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## scoped_name 
+##
+## WARNING: This example involves spurious reductions.
+## This implies that, although the LR(1) items shown above provide an
+## accurate view of the past (what has been recognized so far), they
+## may provide an INCOMPLETE view of the future (what was expected next).
+## In state 36, spurious reduction of production scoped_name -> identifier 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Identifier Void 
+##
+## Ends in an error in state: 36.
+##
+## scoped_name -> identifier . [ Valuetype Semicolon RPar RBrace Question Partial Object OR Module LPar LBracket LBrace Implements Identifier Gt Exception Enum Ellipsis Dictionary DOMString Comma Callback Attribute ]
+## scoped_name -> identifier . DoubleColon scoped_name_after_colon [ Valuetype Semicolon RPar RBrace Question Partial Object OR Module LPar LBracket LBrace Implements Identifier Gt Exception Enum Ellipsis Dictionary DOMString Comma Callback Attribute ]
+##
+## The known suffix of the stack is as follows:
+## identifier 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier Colon Identifier Comma Void 
+##
+## Ends in an error in state: 162.
+##
+## separated_nonempty_list(Comma,__anonymous_1(scoped_name)) -> scoped_name Comma . separated_nonempty_list(Comma,__anonymous_1(scoped_name)) [ RPar RBrace LBrace ]
+##
+## The known suffix of the stack is as follows:
+## scoped_name Comma 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier Colon Identifier RPar 
+##
+## Ends in an error in state: 228.
+##
+## interface -> Interface identifier inheritance . LBrace interface_members RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Interface identifier inheritance 
+##
+## WARNING: This example involves spurious reductions.
+## This implies that, although the LR(1) items shown above provide an
+## accurate view of the past (what has been recognized so far), they
+## may provide an INCOMPLETE view of the future (what was expected next).
+## In state 36, spurious reduction of production scoped_name -> identifier 
+## In state 161, spurious reduction of production separated_nonempty_list(Comma,__anonymous_1(scoped_name)) -> scoped_name 
+## In state 158, spurious reduction of production comma_separated_list(scoped_name) -> separated_nonempty_list(Comma,__anonymous_1(scoped_name)) 
+## In state 226, spurious reduction of production loption(__anonymous_3) -> Colon comma_separated_list(scoped_name) 
+## In state 227, spurious reduction of production inheritance -> loption(__anonymous_3) 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier Colon Identifier Valuetype 
+##
+## Ends in an error in state: 161.
+##
+## separated_nonempty_list(Comma,__anonymous_1(scoped_name)) -> scoped_name . [ RPar RBrace LBrace ]
+## separated_nonempty_list(Comma,__anonymous_1(scoped_name)) -> scoped_name . Comma separated_nonempty_list(Comma,__anonymous_1(scoped_name)) [ RPar RBrace LBrace ]
+##
+## The known suffix of the stack is as follows:
+## scoped_name 
+##
+## WARNING: This example involves spurious reductions.
+## This implies that, although the LR(1) items shown above provide an
+## accurate view of the past (what has been recognized so far), they
+## may provide an INCOMPLETE view of the future (what was expected next).
+## In state 36, spurious reduction of production scoped_name -> identifier 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier Colon Void 
+##
+## Ends in an error in state: 225.
+##
+## loption(__anonymous_3) -> Colon . comma_separated_list(scoped_name) [ LBrace ]
+##
+## The known suffix of the stack is as follows:
+## Colon 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Attribute Valuetype 
+##
+## Ends in an error in state: 173.
+##
+## attribute -> boption(Inherit) boption(ReadOnly) Attribute . type_ argument_name get setraises Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Omittable Octet Object Long LegacyCaller LBracket LBrace Inherit Identifier Getter Float DoubleColon Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
+##
+## The known suffix of the stack is as follows:
+## boption(Inherit) boption(ReadOnly) Attribute 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Attribute Void Valuetype GetRaises LBrace Identifier RPar 
+##
+## Ends in an error in state: 180.
+##
+## get -> GetRaises LBrace scoped_name_list . RBrace [ SetRaises Semicolon ]
+##
+## The known suffix of the stack is as follows:
+## GetRaises LBrace scoped_name_list 
+##
+## WARNING: This example involves spurious reductions.
+## This implies that, although the LR(1) items shown above provide an
+## accurate view of the past (what has been recognized so far), they
+## may provide an INCOMPLETE view of the future (what was expected next).
+## In state 36, spurious reduction of production scoped_name -> identifier 
+## In state 161, spurious reduction of production separated_nonempty_list(Comma,__anonymous_1(scoped_name)) -> scoped_name 
+## In state 158, spurious reduction of production comma_separated_list(scoped_name) -> separated_nonempty_list(Comma,__anonymous_1(scoped_name)) 
+## In state 164, spurious reduction of production scoped_name_list -> comma_separated_list(scoped_name) 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Attribute Void Valuetype GetRaises LBrace Void 
+##
+## Ends in an error in state: 179.
+##
+## get -> GetRaises LBrace . scoped_name_list RBrace [ SetRaises Semicolon ]
+##
+## The known suffix of the stack is as follows:
+## GetRaises LBrace 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Attribute Void Valuetype GetRaises Void 
+##
+## Ends in an error in state: 178.
+##
+## get -> GetRaises . LBrace scoped_name_list RBrace [ SetRaises Semicolon ]
+##
+## The known suffix of the stack is as follows:
+## GetRaises 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Attribute Void Valuetype Inherits Getter Void 
+##
+## Ends in an error in state: 182.
+##
+## attribute -> boption(Inherit) boption(ReadOnly) Attribute type_ argument_name get . setraises Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Omittable Octet Object Long LegacyCaller LBracket LBrace Inherit Identifier Getter Float DoubleColon Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
+##
+## The known suffix of the stack is as follows:
+## boption(Inherit) boption(ReadOnly) Attribute type_ argument_name get 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Attribute Void Valuetype Inherits Void 
+##
+## Ends in an error in state: 176.
+##
+## get -> Inherits . Getter [ SetRaises Semicolon ]
+##
+## The known suffix of the stack is as follows:
+## Inherits 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Attribute Void Valuetype SetRaises LPar Identifier RBrace 
+##
+## Ends in an error in state: 185.
+##
+## loption(__anonymous_4) -> SetRaises LPar scoped_name_list . RPar [ Semicolon ]
+##
+## The known suffix of the stack is as follows:
+## SetRaises LPar scoped_name_list 
+##
+## WARNING: This example involves spurious reductions.
+## This implies that, although the LR(1) items shown above provide an
+## accurate view of the past (what has been recognized so far), they
+## may provide an INCOMPLETE view of the future (what was expected next).
+## In state 36, spurious reduction of production scoped_name -> identifier 
+## In state 161, spurious reduction of production separated_nonempty_list(Comma,__anonymous_1(scoped_name)) -> scoped_name 
+## In state 158, spurious reduction of production comma_separated_list(scoped_name) -> separated_nonempty_list(Comma,__anonymous_1(scoped_name)) 
+## In state 164, spurious reduction of production scoped_name_list -> comma_separated_list(scoped_name) 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Attribute Void Valuetype SetRaises LPar Identifier RPar Void 
+##
+## Ends in an error in state: 187.
+##
+## attribute -> boption(Inherit) boption(ReadOnly) Attribute type_ argument_name get setraises . Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Omittable Octet Object Long LegacyCaller LBracket LBrace Inherit Identifier Getter Float DoubleColon Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
+##
+## The known suffix of the stack is as follows:
+## boption(Inherit) boption(ReadOnly) Attribute type_ argument_name get setraises 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Attribute Void Valuetype SetRaises LPar Void 
+##
+## Ends in an error in state: 184.
+##
+## loption(__anonymous_4) -> SetRaises LPar . scoped_name_list RPar [ Semicolon ]
+##
+## The known suffix of the stack is as follows:
+## SetRaises LPar 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Attribute Void Valuetype SetRaises Void 
+##
+## Ends in an error in state: 183.
+##
+## loption(__anonymous_4) -> SetRaises . LPar scoped_name_list RPar [ Semicolon ]
+##
+## The known suffix of the stack is as follows:
+## SetRaises 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Attribute Void Valuetype Void 
+##
+## Ends in an error in state: 175.
+##
+## attribute -> boption(Inherit) boption(ReadOnly) Attribute type_ argument_name . get setraises Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Omittable Octet Object Long LegacyCaller LBracket LBrace Inherit Identifier Getter Float DoubleColon Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
+##
+## The known suffix of the stack is as follows:
+## boption(Inherit) boption(ReadOnly) Attribute type_ argument_name 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Attribute Void Void 
+##
+## Ends in an error in state: 174.
+##
+## attribute -> boption(Inherit) boption(ReadOnly) Attribute type_ . argument_name get setraises Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Omittable Octet Object Long LegacyCaller LBracket LBrace Inherit Identifier Getter Float DoubleColon Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
+## type_ -> type_ . LBracket RBracket [ Valuetype Question Partial Object Module LBracket Identifier Exception Enum Dictionary Callback Attribute ]
+## type_ -> type_ . Question [ Valuetype Question Partial Object Module LBracket Identifier Exception Enum Dictionary Callback Attribute ]
+##
+## The known suffix of the stack is as follows:
+## boption(Inherit) boption(ReadOnly) Attribute type_ 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Inherit Void 
+##
+## Ends in an error in state: 170.
+##
+## attribute -> boption(Inherit) . boption(ReadOnly) Attribute type_ argument_name get setraises Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Omittable Octet Object Long LegacyCaller LBracket LBrace Inherit Identifier Getter Float DoubleColon Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
+##
+## The known suffix of the stack is as follows:
+## boption(Inherit) 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace LBracket Identifier RBracket Valuetype 
+##
+## Ends in an error in state: 149.
+##
+## list(__anonymous_0(interface_member)) -> extended_attribute_list . interface_member list(__anonymous_0(interface_member)) [ RBrace ]
+##
+## The known suffix of the stack is as follows:
+## extended_attribute_list 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace RBrace Void 
+##
+## Ends in an error in state: 231.
+##
+## interface -> Interface identifier inheritance LBrace interface_members RBrace . Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Interface identifier inheritance LBrace interface_members RBrace 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace ReadOnly Any 
+##
+## Ends in an error in state: 172.
+##
+## attribute -> boption(Inherit) boption(ReadOnly) . Attribute type_ argument_name get setraises Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Omittable Octet Object Long LegacyCaller LBracket LBrace Inherit Identifier Getter Float DoubleColon Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
+##
+## The known suffix of the stack is as follows:
+## boption(Inherit) boption(ReadOnly) 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Static Valuetype 
+##
+## Ends in an error in state: 199.
+##
+## operation -> option(qualifiers) . operation_rest [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Omittable Octet Object Long LegacyCaller LBracket LBrace Inherit Identifier Getter Float DoubleColon Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
+##
+## The known suffix of the stack is as follows:
+## option(qualifiers) 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Stringifier Semicolon Valuetype 
+##
+## Ends in an error in state: 202.
+##
+## list(__anonymous_0(interface_member)) -> extended_attribute_list interface_member . list(__anonymous_0(interface_member)) [ RBrace ]
+##
+## The known suffix of the stack is as follows:
+## extended_attribute_list interface_member 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Stringifier Valuetype 
+##
+## Ends in an error in state: 150.
+##
+## attribute_or_operation -> Stringifier . stringifier_attribute_or_operation [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Omittable Octet Object Long LegacyCaller LBracket LBrace Inherit Identifier Getter Float DoubleColon Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
+##
+## The known suffix of the stack is as follows:
+## Stringifier 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Valuetype 
+##
+## Ends in an error in state: 229.
+##
+## interface -> Interface identifier inheritance LBrace . interface_members RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Interface identifier inheritance LBrace 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Void Identifier Void 
+##
+## Ends in an error in state: 154.
+##
+## operation_rest -> type_ option(identifier) . arguments loption(__anonymous_5) Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Omittable Octet Object Long LegacyCaller LBracket LBrace Inherit Identifier Getter Float DoubleColon Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
+##
+## The known suffix of the stack is as follows:
+## type_ option(identifier) 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Void LPar RPar Raises LPar Identifier RBrace 
+##
+## Ends in an error in state: 159.
+##
+## loption(__anonymous_5) -> Raises LPar scoped_name_list . RPar [ Semicolon ]
+##
+## The known suffix of the stack is as follows:
+## Raises LPar scoped_name_list 
+##
+## WARNING: This example involves spurious reductions.
+## This implies that, although the LR(1) items shown above provide an
+## accurate view of the past (what has been recognized so far), they
+## may provide an INCOMPLETE view of the future (what was expected next).
+## In state 36, spurious reduction of production scoped_name -> identifier 
+## In state 161, spurious reduction of production separated_nonempty_list(Comma,__anonymous_1(scoped_name)) -> scoped_name 
+## In state 158, spurious reduction of production comma_separated_list(scoped_name) -> separated_nonempty_list(Comma,__anonymous_1(scoped_name)) 
+## In state 164, spurious reduction of production scoped_name_list -> comma_separated_list(scoped_name) 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Void LPar RPar Raises LPar Identifier RPar Void 
+##
+## Ends in an error in state: 165.
+##
+## operation_rest -> type_ option(identifier) arguments loption(__anonymous_5) . Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Omittable Octet Object Long LegacyCaller LBracket LBrace Inherit Identifier Getter Float DoubleColon Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
+##
+## The known suffix of the stack is as follows:
+## type_ option(identifier) arguments loption(__anonymous_5) 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Void LPar RPar Raises LPar Void 
+##
+## Ends in an error in state: 157.
+##
+## loption(__anonymous_5) -> Raises LPar . scoped_name_list RPar [ Semicolon ]
+##
+## The known suffix of the stack is as follows:
+## Raises LPar 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Void LPar RPar Raises Void 
+##
+## Ends in an error in state: 156.
+##
+## loption(__anonymous_5) -> Raises . LPar scoped_name_list RPar [ Semicolon ]
+##
+## The known suffix of the stack is as follows:
+## Raises 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Void LPar RPar Void 
+##
+## Ends in an error in state: 155.
+##
+## operation_rest -> type_ option(identifier) arguments . loption(__anonymous_5) Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Omittable Octet Object Long LegacyCaller LBracket LBrace Inherit Identifier Getter Float DoubleColon Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
+##
+## The known suffix of the stack is as follows:
+## type_ option(identifier) arguments 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier LBrace Void Void 
+##
+## Ends in an error in state: 153.
+##
+## operation_rest -> type_ . option(identifier) arguments loption(__anonymous_5) Semicolon [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly RBrace Omittable Octet Object Long LegacyCaller LBracket LBrace Inherit Identifier Getter Float DoubleColon Double Deleter Date DOMString Creator Const Byte Boolean Attribute Any ]
+## type_ -> type_ . LBracket RBracket [ Question LPar LBracket Identifier ]
+## type_ -> type_ . Question [ Question LPar LBracket Identifier ]
+##
+## The known suffix of the stack is as follows:
+## type_ 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier Semicolon RBrace 
+##
+## Ends in an error in state: 287.
+##
+## main -> definitions . EOF [ # ]
+##
+## The known suffix of the stack is as follows:
+## definitions 
+##
+## WARNING: This example involves spurious reductions.
+## This implies that, although the LR(1) items shown above provide an
+## accurate view of the past (what has been recognized so far), they
+## may provide an INCOMPLETE view of the future (what was expected next).
+## In state 283, spurious reduction of production list(definition) -> 
+## In state 284, spurious reduction of production list(definition) -> definition list(definition) 
+## In state 137, spurious reduction of production definitions -> list(definition) 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier Semicolon Void 
+##
+## Ends in an error in state: 283.
+##
+## list(definition) -> definition . list(definition) [ RBrace EOF ]
+##
+## The known suffix of the stack is as follows:
+## definition 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Identifier Void 
+##
+## Ends in an error in state: 223.
+##
+## interface -> Interface identifier . inheritance LBrace interface_members RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+## interface -> Interface identifier . Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Interface identifier 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Interface Void 
+##
+## Ends in an error in state: 222.
+##
+## interface -> Interface . identifier inheritance LBrace interface_members RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+## interface -> Interface . identifier Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Interface 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: LBracket Identifier Comma Void 
+##
+## Ends in an error in state: 109.
+##
+## separated_nonempty_list(Comma,__anonymous_1(extended_attribute)) -> extended_attribute Comma . separated_nonempty_list(Comma,__anonymous_1(extended_attribute)) [ RBracket Comma ]
+##
+## The known suffix of the stack is as follows:
+## extended_attribute Comma 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: LBracket Identifier Equals Identifier Colon 
+##
+## Ends in an error in state: 61.
+##
+## extended_attribute -> identifier option(__anonymous_8) . option(arguments) [ RBracket Comma ]
+##
+## The known suffix of the stack is as follows:
+## identifier option(__anonymous_8) 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: LBracket Identifier Equals Void 
+##
+## Ends in an error in state: 59.
+##
+## option(__anonymous_8) -> Equals . identifier [ RBracket LPar Comma ]
+##
+## The known suffix of the stack is as follows:
+## Equals 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: LBracket Identifier LPar InOut Valuetype 
+##
+## Ends in an error in state: 70.
+##
+## argument -> extended_attribute_list argmode . optional_or_required_argument [ RPar Comma ]
+##
+## The known suffix of the stack is as follows:
+## extended_attribute_list argmode 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: LBracket Identifier LPar LBracket Identifier RBracket Valuetype 
+##
+## Ends in an error in state: 67.
+##
+## argument -> extended_attribute_list . argmode optional_or_required_argument [ RPar Comma ]
+##
+## The known suffix of the stack is as follows:
+## extended_attribute_list 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: LBracket Identifier LPar Optional Valuetype 
+##
+## Ends in an error in state: 71.
 ##
 ## optional_or_required_argument -> Optional . type_ argument_name default [ RPar Comma ]
 ##
@@ -875,638 +1259,505 @@ main: LBracket Identifier LPar Optional Void
 ## Optional 
 ##
 
-Expected an argument type.
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: LBracket Identifier LPar Optional Void Valuetype Void 
+##
+## Ends in an error in state: 83.
+##
+## optional_or_required_argument -> Optional type_ argument_name . default [ RPar Comma ]
+##
+## The known suffix of the stack is as follows:
+## Optional type_ argument_name 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: LBracket Identifier LPar Optional Void Void 
+##
+## Ends in an error in state: 72.
+##
+## optional_or_required_argument -> Optional type_ . argument_name default [ RPar Comma ]
+## type_ -> type_ . LBracket RBracket [ Valuetype Question Partial Object Module LBracket Identifier Exception Enum Dictionary Callback Attribute ]
+## type_ -> type_ . Question [ Valuetype Question Partial Object Module LBracket Identifier Exception Enum Dictionary Callback Attribute ]
+##
+## The known suffix of the stack is as follows:
+## Optional type_ 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
 main: LBracket Identifier LPar RPar Void 
 ##
-## Ends in an error in state: 124.
+## Ends in an error in state: 108.
 ##
-## separated_nonempty_list(Comma,extended_attribute) -> extended_attribute . [ RBracket ]
-## separated_nonempty_list(Comma,extended_attribute) -> extended_attribute . Comma separated_nonempty_list(Comma,extended_attribute) [ RBracket ]
+## separated_nonempty_list(Comma,__anonymous_1(extended_attribute)) -> extended_attribute . [ RBracket Comma ]
+## separated_nonempty_list(Comma,__anonymous_1(extended_attribute)) -> extended_attribute . Comma separated_nonempty_list(Comma,__anonymous_1(extended_attribute)) [ RBracket Comma ]
 ##
 ## The known suffix of the stack is as follows:
 ## extended_attribute 
 ##
 
-Expected `,' followed by more extended attributes, or `]'.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: LBracket Identifier LPar Short Attribute Comma Void 
+main: LBracket Identifier LPar Valuetype 
 ##
-## Ends in an error in state: 110.
+## Ends in an error in state: 62.
 ##
-## separated_nonempty_list(Comma,argument) -> argument Comma . separated_nonempty_list(Comma,argument) [ RPar ]
-##
-## The known suffix of the stack is as follows:
-## argument Comma 
-##
-
-Expected a comma-separated list of extended arguments.
-
-main: LBracket Identifier LPar Short Attribute Void 
-##
-## Ends in an error in state: 109.
-##
-## separated_nonempty_list(Comma,argument) -> argument . [ RPar ]
-## separated_nonempty_list(Comma,argument) -> argument . Comma separated_nonempty_list(Comma,argument) [ RPar ]
-##
-## The known suffix of the stack is as follows:
-## argument 
-##
-
-Expected `,' followed by further arguments, or `)'.
-
-main: LBracket Identifier LPar Short Ellipsis Any 
-##
-## Ends in an error in state: 104.
-##
-## optional_or_required_argument -> type_ option(Ellipsis) . argument_name [ RPar Comma ]
-##
-## The known suffix of the stack is as follows:
-## type_ option(Ellipsis) 
-##
-
-Expected an argument name.
-
-main: LBracket Identifier LPar Short RPar 
-##
-## Ends in an error in state: 102.
-##
-## optional_or_required_argument -> type_ . option(Ellipsis) argument_name [ RPar Comma ]
-##
-## The known suffix of the stack is as follows:
-## type_ 
-##
-## WARNING: This example involves spurious reductions.
-## This implies that, although the LR(1) items shown above provide an
-## accurate view of the past (what has been recognized so far), they
-## may provide an INCOMPLETE view of the future (what was expected next).
-## In state 50, spurious reduction of production type_suffix -> 
-## In state 51, spurious reduction of production non_any_type -> primitive_type type_suffix 
-## In state 67, spurious reduction of production single_type -> non_any_type 
-## In state 66, spurious reduction of production type_ -> single_type 
-##
-
-Expected `...', or an argument name.
-
-main: LBracket Identifier LPar Void 
-##
-## Ends in an error in state: 3.
-##
-## extended_attribute_arg_list -> Identifier LPar . argument_list RPar [ RBracket Comma ]
-##
-## The known suffix of the stack is as follows:
-## Identifier LPar 
-##
-
-Expected an argument list.
-
-main: LBracket Identifier Void 
-##
-## Ends in an error in state: 2.
-##
-## extended_attribute_arg_list -> Identifier . LPar argument_list RPar [ RBracket Comma ]
-## extended_attribute_ident -> Identifier . Equals Identifier [ RBracket Comma ]
-## extended_attribute_named_arg_list -> Identifier . Equals Identifier LPar argument_list RPar [ RBracket Comma ]
-## extended_attribute_no_args -> Identifier . [ RBracket Comma ]
-##
-## The known suffix of the stack is as follows:
-## Identifier 
-##
-
-Expected an extended argument continuation: `(' followed by an argument list, `=' followed by an identifier,
-or one of `,' followed by more extended arguments or `]'.
-
-main: LBracket RBracket Void 
-##
-## Ends in an error in state: 129.
-##
-## single_definition -> extended_attribute_list . definition [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## extended_attribute_list 
-##
-
-Expected a definition.
-
-main: LBracket Void 
-##
-## Ends in an error in state: 1.
-##
-## option(__anonymous_3) -> LBracket . loption(separated_nonempty_list(Comma,extended_attribute)) RBracket [ Void Unsigned Unrestricted Typedef Stringifier Static Short Setter Sequence ReadOnly Partial Optional Octet Object Long LegacyCaller LPar Interface Inherit Identifier Getter Float Exception Enum Double Dictionary Deleter Date DOMString Creator Const Callback Byte Boolean Attribute Any ]
-##
-## The known suffix of the stack is as follows:
-## LBracket 
-##
-
-Expected `,' followed by more extended arguments, or `]'.
-
-main: Partial Dictionary Identifier LBrace RBrace Void 
-##
-## Ends in an error in state: 207.
-##
-## partial_dictionary -> Dictionary Identifier LBrace dictionary_members RBrace . Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Dictionary Identifier LBrace dictionary_members RBrace 
-##
-
-Expected `;' to end the dictionary specification.
-
-main: Partial Dictionary Identifier LBrace Void 
-##
-## Ends in an error in state: 196.
-##
-## partial_dictionary -> Dictionary Identifier LBrace . dictionary_members RBrace Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Dictionary Identifier LBrace 
-##
-
-Expected dictionary members, or `}'.
-
-main: Partial Dictionary Identifier Void 
-##
-## Ends in an error in state: 195.
-##
-## partial_dictionary -> Dictionary Identifier . LBrace dictionary_members RBrace Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Dictionary Identifier 
-##
-
-Expected `{' followed by dictionary members.
-
-main: Partial Dictionary Void 
-##
-## Ends in an error in state: 194.
-##
-## partial_dictionary -> Dictionary . Identifier LBrace dictionary_members RBrace Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Dictionary 
-##
-
-Expected an identifier for the partial dictionary.
-
-main: Partial Interface Identifier LBrace RBrace Void 
-##
-## Ends in an error in state: 192.
-##
-## partial_interface -> Interface Identifier LBrace interface_members RBrace . Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Interface Identifier LBrace interface_members RBrace 
-##
-
-Expected a `;' to end the partial interface specification.
-
-main: Partial Interface Identifier LBrace Typedef 
-##
-## Ends in an error in state: 138.
-##
-## partial_interface -> Interface Identifier LBrace . interface_members RBrace Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Interface Identifier LBrace 
-##
-
-Expected interface members, or `}'.
-
-main: Partial Interface Identifier Void 
-##
-## Ends in an error in state: 137.
-##
-## partial_interface -> Interface Identifier . LBrace interface_members RBrace Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Interface Identifier 
-##
-
-Expected `{' followed by interface members.
-
-main: Partial Interface Void 
-##
-## Ends in an error in state: 136.
-##
-## partial_interface -> Interface . Identifier LBrace interface_members RBrace Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Interface 
-##
-
-Expected an identifier for the partial interface.
-
-main: Partial Void 
-##
-## Ends in an error in state: 135.
-##
-## partial -> Partial . partial_definition [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Partial 
-##
-
-Expected a partial definition (one of `interface', `dictionary' or ...).
-
-main: Typedef Any Identifier Semicolon Void 
-##
-## Ends in an error in state: 127.
-##
-## list(single_definition) -> single_definition . list(single_definition) [ EOF ]
-##
-## The known suffix of the stack is as follows:
-## single_definition 
-##
-
-Expected zero or more further definitions.
-
-main: Typedef Any LBracket RBracket Void 
-##
-## Ends in an error in state: 23.
-##
-## type_suffix_starting_with_array -> LBracket RBracket . type_suffix [ Unrestricted Typedef Stringifier Setter RPar Partial OR LegacyCaller LPar Interface Inherit Implements Identifier Gt Getter Exception Enum Ellipsis Dictionary Deleter Creator Const Callback Attribute ]
-##
-## The known suffix of the stack is as follows:
-## LBracket RBracket 
-##
-
-Expected a type expression.
-
-main: Typedef Any LBracket Void 
-##
-## Ends in an error in state: 22.
-##
-## type_suffix_starting_with_array -> LBracket . RBracket type_suffix [ Unrestricted Typedef Stringifier Setter RPar Partial OR LegacyCaller LPar Interface Inherit Implements Identifier Gt Getter Exception Enum Ellipsis Dictionary Deleter Creator Const Callback Attribute ]
-##
-## The known suffix of the stack is as follows:
-## LBracket 
-##
-
-Expected `]'.
-
-main: Typedef Any Void 
-##
-## Ends in an error in state: 57.
-##
-## single_type -> Any . type_suffix_starting_with_array [ Unrestricted Typedef Stringifier Setter Partial LegacyCaller LPar Interface Inherit Implements Identifier Gt Getter Exception Enum Ellipsis Dictionary Deleter Creator Const Callback Attribute ]
-##
-## The known suffix of the stack is as follows:
-## Any 
-##
-
-Expected a type expression, starting with an array.
-
-main: Typedef DOMString Void 
-##
-## Ends in an error in state: 35.
-##
-## non_any_type -> DOMString . type_suffix [ Unrestricted Typedef Stringifier Setter RPar Partial OR LegacyCaller LPar Interface Inherit Implements Identifier Gt Getter Exception Enum Ellipsis Dictionary Deleter Creator Const Callback Attribute ]
-##
-## The known suffix of the stack is as follows:
-## DOMString 
-##
-
-Expected a type expression.
-
-main: Typedef Date Void 
-##
-## Ends in an error in state: 33.
-##
-## non_any_type -> Date . type_suffix [ Unrestricted Typedef Stringifier Setter RPar Partial OR LegacyCaller LPar Interface Inherit Implements Identifier Gt Getter Exception Enum Ellipsis Dictionary Deleter Creator Const Callback Attribute ]
-##
-## The known suffix of the stack is as follows:
-## Date 
-##
-
-Expected a type expression.
-
-main: Typedef Identifier Void 
-##
-## Ends in an error in state: 31.
-##
-## non_any_type -> Identifier . type_suffix [ Unrestricted Typedef Stringifier Setter RPar Partial OR LegacyCaller LPar Interface Inherit Implements Identifier Gt Getter Exception Enum Ellipsis Dictionary Deleter Creator Const Callback Attribute ]
-##
-## The known suffix of the stack is as follows:
-## Identifier 
-##
-
-Expected a type expression.
-
-main: Typedef LBracket RBracket Void 
-##
-## Ends in an error in state: 131.
-##
-## typedef -> Typedef extended_attribute_list . type_ Identifier Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Typedef extended_attribute_list 
-##
-
-Expected a type.
-
-main: Typedef LPar Any LBracket RBracket Void 
-##
-## Ends in an error in state: 41.
-##
-## union_member_type -> Any LBracket RBracket . type_suffix [ RPar OR ]
-##
-## The known suffix of the stack is as follows:
-## Any LBracket RBracket 
-##
-
-Expected a type expression.
-
-main: Typedef LPar Any LBracket Void 
-##
-## Ends in an error in state: 40.
-##
-## union_member_type -> Any LBracket . RBracket type_suffix [ RPar OR ]
-##
-## The known suffix of the stack is as follows:
-## Any LBracket 
-##
-
-Expected `]'.
-
-main: Typedef LPar Any Void 
-##
-## Ends in an error in state: 39.
-##
-## union_member_type -> Any . LBracket RBracket type_suffix [ RPar OR ]
-##
-## The known suffix of the stack is as follows:
-## Any 
-##
-
-Expected `[]' followed by a type expression.
-
-main: Typedef LPar Boolean RPar Void 
-##
-## Ends in an error in state: 59.
-##
-## type_ -> union_type . type_suffix [ Unrestricted Typedef Stringifier Setter Partial LegacyCaller LPar Interface Inherit Implements Identifier Gt Getter Exception Enum Ellipsis Dictionary Deleter Creator Const Callback Attribute ]
-##
-## The known suffix of the stack is as follows:
-## union_type 
-##
-
-Expected a type expression.
-
-main: Typedef LPar LPar Short RPar Void 
-##
-## Ends in an error in state: 45.
-##
-## union_member_type -> union_type . type_suffix [ RPar OR ]
-##
-## The known suffix of the stack is as follows:
-## union_type 
-##
-
-Expected a type expression.
-
-main: Typedef LPar Short OR Void 
-##
-## Ends in an error in state: 48.
-##
-## separated_nonempty_list(OR,union_member_type) -> union_member_type OR . separated_nonempty_list(OR,union_member_type) [ RPar ]
-##
-## The known suffix of the stack is as follows:
-## union_member_type OR 
-##
-
-Expected a list of further union members types, starting with `|'.
-
-main: Typedef LPar Short Unrestricted 
-##
-## Ends in an error in state: 47.
-##
-## separated_nonempty_list(OR,union_member_type) -> union_member_type . [ RPar ]
-## separated_nonempty_list(OR,union_member_type) -> union_member_type . OR separated_nonempty_list(OR,union_member_type) [ RPar ]
-##
-## The known suffix of the stack is as follows:
-## union_member_type 
-##
-## WARNING: This example involves spurious reductions.
-## This implies that, although the LR(1) items shown above provide an
-## accurate view of the past (what has been recognized so far), they
-## may provide an INCOMPLETE view of the future (what was expected next).
-## In state 50, spurious reduction of production type_suffix -> 
-## In state 51, spurious reduction of production non_any_type -> primitive_type type_suffix 
-## In state 52, spurious reduction of production union_member_type -> non_any_type 
-##
-
-Expected `)' or `|' followed by more union member types.
-
-main: Typedef LPar Void 
-##
-## Ends in an error in state: 30.
-##
-## union_type -> LPar . separated_nonempty_list(OR,union_member_type) RPar [ Unrestricted Typedef Stringifier Setter RPar Question Partial OR LegacyCaller LPar LBracket Interface Inherit Implements Identifier Gt Getter Exception Enum Ellipsis Dictionary Deleter Creator Const Callback Attribute ]
+## arguments -> LPar . loption(separated_nonempty_list(Comma,__anonymous_6)) RPar [ Semicolon Raises RBracket Comma ]
 ##
 ## The known suffix of the stack is as follows:
 ## LPar 
 ##
 
-Expected a `|'-separated list of union members types, followed by `)'.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Typedef Long Void 
+main: LBracket Identifier LPar Void Attribute Comma Valuetype 
 ##
-## Ends in an error in state: 10.
+## Ends in an error in state: 104.
 ##
-## integer_type -> Long . [ Unrestricted Typedef Stringifier Setter RPar Question Partial OR LegacyCaller LPar LBracket Interface Inherit Implements Identifier Gt Getter Exception Enum Ellipsis Dictionary Deleter Creator Const Callback Attribute ]
-## integer_type -> Long . Long [ Unrestricted Typedef Stringifier Setter RPar Question Partial OR LegacyCaller LPar LBracket Interface Inherit Implements Identifier Gt Getter Exception Enum Ellipsis Dictionary Deleter Creator Const Callback Attribute ]
+## separated_nonempty_list(Comma,__anonymous_6) -> argument Comma . separated_nonempty_list(Comma,__anonymous_6) [ RPar ]
 ##
 ## The known suffix of the stack is as follows:
-## Long 
+## argument Comma 
 ##
 
-Expected `long', a type expression or a continuation of the enclosing definition.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Typedef Object Void 
+main: LBracket Identifier LPar Void Attribute Void 
 ##
-## Ends in an error in state: 20.
+## Ends in an error in state: 103.
 ##
-## non_any_type -> Object . type_suffix [ Unrestricted Typedef Stringifier Setter RPar Partial OR LegacyCaller LPar Interface Inherit Implements Identifier Gt Getter Exception Enum Ellipsis Dictionary Deleter Creator Const Callback Attribute ]
+## separated_nonempty_list(Comma,__anonymous_6) -> argument . [ RPar ]
+## separated_nonempty_list(Comma,__anonymous_6) -> argument . Comma separated_nonempty_list(Comma,__anonymous_6) [ RPar ]
 ##
 ## The known suffix of the stack is as follows:
-## Object 
+## argument 
 ##
 
-Expected a type expression, or a continuation of the enclosing definition.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Typedef Sequence Lt Short Gt Void 
+main: LBracket Identifier LPar Void Ellipsis Any 
 ##
-## Ends in an error in state: 62.
+## Ends in an error in state: 100.
 ##
-## non_any_type -> Sequence Lt type_ Gt . null [ Unrestricted Typedef Stringifier Setter RPar Partial OR LegacyCaller LPar Interface Inherit Implements Identifier Gt Getter Exception Enum Ellipsis Dictionary Deleter Creator Const Callback Attribute ]
+## optional_or_required_argument -> type_ boption(Ellipsis) . argument_name [ RPar Comma ]
 ##
 ## The known suffix of the stack is as follows:
-## Sequence Lt type_ Gt 
+## type_ boption(Ellipsis) 
 ##
 
-Expected `>'.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Typedef Sequence Lt Short Unrestricted 
+main: LBracket Identifier LPar Void Void 
 ##
-## Ends in an error in state: 61.
+## Ends in an error in state: 98.
 ##
-## non_any_type -> Sequence Lt type_ . Gt null [ Unrestricted Typedef Stringifier Setter RPar Partial OR LegacyCaller LPar Interface Inherit Implements Identifier Gt Getter Exception Enum Ellipsis Dictionary Deleter Creator Const Callback Attribute ]
+## optional_or_required_argument -> type_ . boption(Ellipsis) argument_name [ RPar Comma ]
+## type_ -> type_ . LBracket RBracket [ Valuetype Question Partial Object Module LBracket Identifier Exception Enum Ellipsis Dictionary Callback Attribute ]
+## type_ -> type_ . Question [ Valuetype Question Partial Object Module LBracket Identifier Exception Enum Ellipsis Dictionary Callback Attribute ]
 ##
 ## The known suffix of the stack is as follows:
-## Sequence Lt type_ 
-##
-## WARNING: This example involves spurious reductions.
-## This implies that, although the LR(1) items shown above provide an
-## accurate view of the past (what has been recognized so far), they
-## may provide an INCOMPLETE view of the future (what was expected next).
-## In state 50, spurious reduction of production type_suffix -> 
-## In state 51, spurious reduction of production non_any_type -> primitive_type type_suffix 
-## In state 67, spurious reduction of production single_type -> non_any_type 
-## In state 66, spurious reduction of production type_ -> single_type 
+## type_ 
 ##
 
-Expected `>'.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Typedef Sequence Lt Void 
+main: LBracket Identifier RBracket Void 
 ##
-## Ends in an error in state: 18.
+## Ends in an error in state: 139.
 ##
-## non_any_type -> Sequence Lt . type_ Gt null [ Unrestricted Typedef Stringifier Setter RPar Partial OR LegacyCaller LPar Interface Inherit Implements Identifier Gt Getter Exception Enum Ellipsis Dictionary Deleter Creator Const Callback Attribute ]
+## definition -> extended_attribute_list . Callback interface [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+## definition -> extended_attribute_list . callback [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+## definition -> extended_attribute_list . interface [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+## definition -> extended_attribute_list . partial_interface [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+## definition -> extended_attribute_list . dictionary [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+## definition -> extended_attribute_list . partial_dictionary [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+## definition -> extended_attribute_list . exception_ [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+## definition -> extended_attribute_list . enum [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
 ##
 ## The known suffix of the stack is as follows:
-## Sequence Lt 
+## extended_attribute_list 
 ##
 
-Expected a type.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Typedef Sequence Void 
+main: LBracket Identifier Void 
 ##
-## Ends in an error in state: 17.
+## Ends in an error in state: 58.
 ##
-## non_any_type -> Sequence . Lt type_ Gt null [ Unrestricted Typedef Stringifier Setter RPar Partial OR LegacyCaller LPar Interface Inherit Implements Identifier Gt Getter Exception Enum Ellipsis Dictionary Deleter Creator Const Callback Attribute ]
+## extended_attribute -> identifier . option(__anonymous_8) option(arguments) [ RBracket Comma ]
 ##
 ## The known suffix of the stack is as follows:
-## Sequence 
+## identifier 
 ##
 
-Expected `<'.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Typedef Short Identifier Void 
+main: LBracket Void 
 ##
-## Ends in an error in state: 133.
+## Ends in an error in state: 56.
 ##
-## typedef -> Typedef extended_attribute_list type_ Identifier . Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Typedef extended_attribute_list type_ Identifier 
-##
-
-Expected `;' to end the typedef.
-
-main: Typedef Short LBracket RBracket Void 
-##
-## Ends in an error in state: 25.
-##
-## type_suffix -> LBracket RBracket . type_suffix [ Unrestricted Typedef Stringifier Setter RPar Partial OR LegacyCaller LPar Interface Inherit Implements Identifier Gt Getter Exception Enum Ellipsis Dictionary Deleter Creator Const Callback Attribute ]
-##
-## The known suffix of the stack is as follows:
-## LBracket RBracket 
-##
-
-Expected a type expression, or a continuation of the enclosing definition.
-
-main: Typedef Short LBracket Void 
-##
-## Ends in an error in state: 24.
-##
-## type_suffix -> LBracket . RBracket type_suffix [ Unrestricted Typedef Stringifier Setter RPar Partial OR LegacyCaller LPar Interface Inherit Implements Identifier Gt Getter Exception Enum Ellipsis Dictionary Deleter Creator Const Callback Attribute ]
+## loption(__anonymous_7) -> LBracket . comma_separated_list(extended_attribute) option(Comma) RBracket [ Void Unsigned Unrestricted Stringifier Static Short Setter Sequence ReadOnly Partial Optional Omittable Octet Object Long LegacyCaller LBrace Interface Inherit InOut In Identifier Getter Float Exception Enum DoubleColon Double Dictionary Deleter Date DOMString Creator Const Callback Byte Boolean Attribute Any ]
 ##
 ## The known suffix of the stack is as follows:
 ## LBracket 
 ##
 
-Expected `]'.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Typedef Short Question Void 
+main: Module Identifier LBrace Interface Identifier Semicolon EOF 
 ##
-## Ends in an error in state: 21.
+## Ends in an error in state: 280.
 ##
-## type_suffix -> Question . type_suffix_starting_with_array [ Unrestricted Typedef Stringifier Setter RPar Partial OR LegacyCaller LPar Interface Inherit Implements Identifier Gt Getter Exception Enum Ellipsis Dictionary Deleter Creator Const Callback Attribute ]
+## module_ -> Module identifier LBrace definitions . RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
 ##
 ## The known suffix of the stack is as follows:
-## Question 
-##
-
-Expected a type expression starting with `[]'.
-
-main: Typedef Short Unrestricted 
-##
-## Ends in an error in state: 132.
-##
-## typedef -> Typedef extended_attribute_list type_ . Identifier Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
-##
-## The known suffix of the stack is as follows:
-## Typedef extended_attribute_list type_ 
+## Module identifier LBrace definitions 
 ##
 ## WARNING: This example involves spurious reductions.
 ## This implies that, although the LR(1) items shown above provide an
 ## accurate view of the past (what has been recognized so far), they
 ## may provide an INCOMPLETE view of the future (what was expected next).
-## In state 50, spurious reduction of production type_suffix -> 
-## In state 51, spurious reduction of production non_any_type -> primitive_type type_suffix 
-## In state 67, spurious reduction of production single_type -> non_any_type 
-## In state 66, spurious reduction of production type_ -> single_type 
+## In state 283, spurious reduction of production list(definition) -> 
+## In state 284, spurious reduction of production list(definition) -> definition list(definition) 
+## In state 137, spurious reduction of production definitions -> list(definition) 
 ##
 
-Expected an identifier for the typedef.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Typedef Short Void 
+main: Module Identifier LBrace RBrace Void 
 ##
-## Ends in an error in state: 50.
+## Ends in an error in state: 281.
 ##
-## non_any_type -> primitive_type . type_suffix [ Unrestricted Typedef Stringifier Setter RPar Partial OR LegacyCaller LPar Interface Inherit Implements Identifier Gt Getter Exception Enum Ellipsis Dictionary Deleter Creator Const Callback Attribute ]
+## module_ -> Module identifier LBrace definitions RBrace . Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
 ##
 ## The known suffix of the stack is as follows:
-## primitive_type 
+## Module identifier LBrace definitions RBrace 
 ##
 
-Expected a type expression, or a continuation of the enclosing definition.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Typedef Unrestricted Void 
+main: Module Identifier LBrace Void 
 ##
-## Ends in an error in state: 13.
+## Ends in an error in state: 123.
 ##
-## unrestricted_float_type -> Unrestricted . float_type [ Unrestricted Typedef Stringifier Setter RPar Question Partial OR LegacyCaller LPar LBracket Interface Inherit Implements Identifier Gt Getter Exception Enum Ellipsis Dictionary Deleter Creator Const Callback Attribute ]
+## module_ -> Module identifier LBrace . definitions RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
 ##
 ## The known suffix of the stack is as follows:
-## Unrestricted 
+## Module identifier LBrace 
 ##
 
-Expected a float type.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Typedef Unsigned Void 
+main: Module Identifier Void 
 ##
-## Ends in an error in state: 8.
+## Ends in an error in state: 122.
 ##
-## unsigned_integer_type -> Unsigned . integer_type [ Unrestricted Typedef Stringifier Setter RPar Question Partial OR LegacyCaller LPar LBracket Interface Inherit Implements Identifier Gt Getter Exception Enum Ellipsis Dictionary Deleter Creator Const Callback Attribute ]
+## module_ -> Module identifier . LBrace definitions RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
 ##
 ## The known suffix of the stack is as follows:
-## Unsigned 
+## Module identifier 
 ##
 
-Expected an integer type.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
-main: Typedef Void 
+main: Module Void 
 ##
-## Ends in an error in state: 130.
+## Ends in an error in state: 121.
 ##
-## typedef -> Typedef . extended_attribute_list type_ Identifier Semicolon [ Typedef Partial LBracket Interface Identifier Exception Enum EOF Dictionary Callback ]
+## module_ -> Module . identifier LBrace definitions RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Module 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Partial Dictionary Identifier LBrace RBrace Void 
+##
+## Ends in an error in state: 220.
+##
+## partial_dictionary -> Partial Dictionary identifier LBrace dictionary_members RBrace . Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Partial Dictionary identifier LBrace dictionary_members RBrace 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Partial Dictionary Identifier LBrace Valuetype 
+##
+## Ends in an error in state: 209.
+##
+## partial_dictionary -> Partial Dictionary identifier LBrace . dictionary_members RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Partial Dictionary identifier LBrace 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Partial Dictionary Identifier Void 
+##
+## Ends in an error in state: 208.
+##
+## partial_dictionary -> Partial Dictionary identifier . LBrace dictionary_members RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Partial Dictionary identifier 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Partial Dictionary Void 
+##
+## Ends in an error in state: 207.
+##
+## partial_dictionary -> Partial Dictionary . identifier LBrace dictionary_members RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Partial Dictionary 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Partial Interface Identifier LBrace RBrace Void 
+##
+## Ends in an error in state: 147.
+##
+## partial_interface -> Partial Interface identifier LBrace interface_members RBrace . Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Partial Interface identifier LBrace interface_members RBrace 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Partial Interface Identifier LBrace Valuetype 
+##
+## Ends in an error in state: 143.
+##
+## partial_interface -> Partial Interface identifier LBrace . interface_members RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Partial Interface identifier LBrace 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Partial Interface Identifier Void 
+##
+## Ends in an error in state: 142.
+##
+## partial_interface -> Partial Interface identifier . LBrace interface_members RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Partial Interface identifier 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Partial Interface Void 
+##
+## Ends in an error in state: 141.
+##
+## partial_interface -> Partial Interface . identifier LBrace interface_members RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Partial Interface 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Partial Void 
+##
+## Ends in an error in state: 140.
+##
+## partial_dictionary -> Partial . Dictionary identifier LBrace dictionary_members RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+## partial_interface -> Partial . Interface identifier LBrace interface_members RBrace Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Partial 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Typedef LBracket Identifier RBracket Valuetype 
+##
+## Ends in an error in state: 115.
+##
+## typedef -> Typedef extended_attribute_list . type_ identifier Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+## typedef -> Typedef extended_attribute_list . type_ DOMString Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Typedef extended_attribute_list 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Typedef Valuetype 
+##
+## Ends in an error in state: 55.
+##
+## typedef -> Typedef . extended_attribute_list type_ identifier Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+## typedef -> Typedef . extended_attribute_list type_ DOMString Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
 ##
 ## The known suffix of the stack is as follows:
 ## Typedef 
 ##
 
-Extended an extended attribute list or a type.
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Typedef Void DOMString Void 
+##
+## Ends in an error in state: 117.
+##
+## typedef -> Typedef extended_attribute_list type_ DOMString . Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Typedef extended_attribute_list type_ DOMString 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Typedef Void Identifier Void 
+##
+## Ends in an error in state: 119.
+##
+## typedef -> Typedef extended_attribute_list type_ identifier . Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Typedef extended_attribute_list type_ identifier 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Typedef Void Void 
+##
+## Ends in an error in state: 116.
+##
+## type_ -> type_ . LBracket RBracket [ Question LBracket Identifier DOMString ]
+## type_ -> type_ . Question [ Question LBracket Identifier DOMString ]
+## typedef -> Typedef extended_attribute_list type_ . identifier Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+## typedef -> Typedef extended_attribute_list type_ . DOMString Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Typedef extended_attribute_list type_ 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Valuetype DOMString Sequence Lt Unsigned Short Gt Void 
+##
+## Ends in an error in state: 8.
+##
+## valuetype -> Valuetype DOMString Sequence Lt Unsigned Short Gt . Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Valuetype DOMString Sequence Lt Unsigned Short Gt 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Valuetype DOMString Sequence Lt Unsigned Short Void 
+##
+## Ends in an error in state: 7.
+##
+## valuetype -> Valuetype DOMString Sequence Lt Unsigned Short . Gt Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Valuetype DOMString Sequence Lt Unsigned Short 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Valuetype DOMString Sequence Lt Unsigned Void 
+##
+## Ends in an error in state: 6.
+##
+## valuetype -> Valuetype DOMString Sequence Lt Unsigned . Short Gt Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Valuetype DOMString Sequence Lt Unsigned 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Valuetype DOMString Sequence Lt Void 
+##
+## Ends in an error in state: 5.
+##
+## valuetype -> Valuetype DOMString Sequence Lt . Unsigned Short Gt Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Valuetype DOMString Sequence Lt 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Valuetype DOMString Sequence Void 
+##
+## Ends in an error in state: 4.
+##
+## valuetype -> Valuetype DOMString Sequence . Lt Unsigned Short Gt Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Valuetype DOMString Sequence 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Valuetype DOMString Void 
+##
+## Ends in an error in state: 3.
+##
+## valuetype -> Valuetype DOMString . Sequence Lt Unsigned Short Gt Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Valuetype DOMString 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Valuetype Identifier Valuetype 
+##
+## Ends in an error in state: 10.
+##
+## valuetype -> Valuetype identifier . type_ Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Valuetype identifier 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Valuetype Identifier Void Void 
+##
+## Ends in an error in state: 53.
+##
+## type_ -> type_ . LBracket RBracket [ Semicolon Question LBracket ]
+## type_ -> type_ . Question [ Semicolon Question LBracket ]
+## valuetype -> Valuetype identifier type_ . Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Valuetype identifier type_ 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+main: Valuetype Void 
+##
+## Ends in an error in state: 1.
+##
+## valuetype -> Valuetype . identifier type_ Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+## valuetype -> Valuetype . DOMString Sequence Lt Unsigned Short Gt Semicolon [ Valuetype Typedef RBrace Partial Module LBracket Interface Identifier Exception Enum EOF DoubleColon Dictionary Const Callback ]
+##
+## The known suffix of the stack is as follows:
+## Valuetype 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
 main: Void 
 ##
@@ -1518,5 +1769,5 @@ main: Void
 ## 
 ##
 
-Expected definitions.
+<YOUR SYNTAX ERROR MESSAGE HERE>
 
