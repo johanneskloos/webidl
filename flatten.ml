@@ -12,15 +12,12 @@ module DFS = Graph.Traverse.Dfs(G)
 module Top = Graph.Topological.Make(G)
 
 let extract_inheritance get_inh =
-  QNameMap.fold (fun name data inheritance -> match get_inh data with
-                    | Some inh -> (name, inh) :: inheritance
-                    | None -> inheritance)
+  QNameMap.fold (fun name data inheritance ->
+                   List.map (fun inh -> (name, inh)) (get_inh data) @ inheritance)
 
 let extract_interface_inheritance { interfaces; callback_interfaces; implements } =
-  let extract_inh =
-    extract_inheritance (function
-                           | { inheritance_mode = InheritsFrom inh } -> Some inh
-                           | _ -> None)
+  let extract_inh: IdlData.interface IdlData.QNameMap.t -> _ =
+    extract_inheritance (fun (i: IdlData.interface) -> i.inheritance)
   in implements |> extract_inh interfaces |> extract_inh callback_interfaces
 
 let build_dependencies_and_check_consistency defs =
@@ -86,7 +83,7 @@ let merge_interface
         constructors = parent_constructors; named_properties = parent_named_properties;
         indexed_properties = parent_indexed_properties;
         legacy_callers = parent_legacy_callers; stringifier = parent_stringifier }
-      { inheritance_mode; name; consts; attributes; operations; static_operations;
+      { inheritance; name; consts; attributes; operations; static_operations;
         constructors; special; named_properties; indexed_properties; legacy_callers;
         not_exposed; stringifier; user_attributes
       } = 
@@ -100,7 +97,7 @@ let merge_interface
         deleter = def deleter parent_deleter;
         creator = def creator parent_creator }
   in
-    { inheritance_mode; name; not_exposed; special; user_attributes;
+    { inheritance; name; not_exposed; special; user_attributes;
       consts = parent_consts @ consts;
       attributes = parent_attributes @ attributes;
       operations = parent_operations @ operations;
@@ -110,7 +107,6 @@ let merge_interface
       indexed_properties = merge_properties parent_indexed_properties indexed_properties;
       legacy_callers = parent_legacy_callers @ legacy_callers;
       stringifier = if stringifier = NoStringifier then parent_stringifier else stringifier }
-
 
 let flatten defs =
   let open Vertex in
@@ -151,4 +147,3 @@ let flatten defs =
                                      QNameMap.modify child merge defs.dictionaries })
                     deps (parent, parent_type) defs)
       deps defs
-
