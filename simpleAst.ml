@@ -6,7 +6,7 @@ let comma_sep = Fmt.suffix Fmt.cut (pp_sconst ",")
 
 type scoped_name = NamePath of string list | NameBuiltin of string
 let pp_scoped_name pp = function
-  | NamePath l -> Fmt.list ~sep:(pp_sconst "::") Fmt.string pp (List.rev l)
+  | NamePath l -> Fmt.list ~sep:(pp_sconst "::") Fmt.string pp l
   | NameBuiltin b -> Fmt.string pp b
 
 type type_ =

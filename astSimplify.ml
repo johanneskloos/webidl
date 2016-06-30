@@ -19,22 +19,28 @@ let translate_name ctx prefix name =
     (* Crazy stuff may happen here. FIXME: Do this properly. *)
     NameBuiltin "DOMString"
   else
-      NamePath (name :: prefix)
+      NamePath (prefix @ [name])
 
 let translate_scoped_name ctx prefix { Ast.absolute; Ast.ends_in_domstring; Ast.path } =
   if ends_in_domstring then
     NameBuiltin "DOMString"
   else if absolute then
     NamePath path
-  else
-    NamePath (path @ prefix)
+  else match path with
+    | _ :: _ :: _ ->
+        (* Needs checking - the absolute name rules are not quite consistent, it seems. *)
+        NamePath path
+    | _ -> NamePath (prefix @ path)
 
 let rec translate_type ctx prefix = function
   | Ast.TSequence t -> TSequence (translate_type ctx prefix t)
   | Ast.TArray t -> TArray (translate_type ctx prefix t)
   | Ast.TOptional t -> TOptional (translate_type ctx prefix t)
   | Ast.TUnion t -> TUnion (List.map (translate_type ctx prefix) t)
-  | Ast.TNamed t -> TNamed (translate_scoped_name ctx prefix t)
+  | Ast.TNamed t -> begin match translate_scoped_name ctx prefix t with
+      | NameBuiltin "DOMString" -> TString
+      | n -> TNamed n
+    end
   | Ast.TBoolean -> TBoolean
   | Ast.TByte -> TByte
   | Ast.TString -> TString
@@ -245,7 +251,7 @@ let rec step1_translate_one (ctx: ContextError.ctx) prefix mr = function
   | Ast.DImplements im -> translate_implements ctx prefix mr im
   | Ast.DConst co -> translate_global_const ctx prefix mr co
   | Ast.DModule { Ast.name; Ast.definitions } ->
-      step1_translate_all ctx (name::prefix) mr definitions
+      step1_translate_all ctx (prefix @ [name]) mr definitions
   | Ast.DTypedef ty -> translate_typedef ctx prefix mr ty
   | Ast.DNothing -> mr
 and step1_translate_all ctx prefix mr = function
