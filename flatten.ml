@@ -20,7 +20,7 @@ let extract_interface_inheritance { interfaces; callback_interfaces; implements 
     extract_inheritance (fun (i: IdlData.interface) -> i.inheritance)
   in implements |> extract_inh interfaces |> extract_inh callback_interfaces
 
-let build_dependencies_and_check_consistency defs =
+let build_dependencies_and_check_consistency ctx defs =
   let open Vertex in
   let dep = G.create () in
   let ifinh = extract_interface_inheritance defs
@@ -37,34 +37,38 @@ let build_dependencies_and_check_consistency defs =
     (* Consistency checks *)
     QNameMap.iter (fun name _ ->
                       if QNameMap.mem name defs.interfaces then
-                        failwith (BatString.join "::" name ^ " defined twice, both callback and non-callback"))
+                        ContextError.error ctx "%a defined twice, both callback and non-callback"
+                          IdlData.pp_qualified_name name)
       defs.callback_interfaces;
     List.iter (fun (name, inh) ->
                  if QNameMap.mem name defs.callback_interfaces then begin
                    if QNameMap.mem inh defs.interfaces then
-                     failwith ("Callback interface " ^ BatString.join "::" name ^
-                               " inherits from non-callback interface " ^ BatString.join "::" inh ^ "!")
+                        ContextError.error ctx "Callback interface %a inherits from non-callback interface %a"
+                          IdlData.pp_qualified_name name IdlData.pp_qualified_name inh
                    else if not (QNameMap.mem inh defs.callback_interfaces) then
-                     failwith ("Callback interface " ^ BatString.join "::" name ^
-                               " inherits from non-existant interface " ^ BatString.join "::" inh ^ "!")
+                        ContextError.error ctx "Callback interface %a inherits from non-existent interface %a"
+                          IdlData.pp_qualified_name name IdlData.pp_qualified_name inh
                  end else if QNameMap.mem name defs.interfaces then begin
                    if not (QNameMap.mem inh defs.interfaces ||
                            QNameMap.mem inh defs.callback_interfaces) then
-                     failwith ("Interface " ^ BatString.join "::" name ^
-                               " inherits from non-existant interface " ^ BatString.join "::" inh ^ "!")
+                        ContextError.error ctx "Interface %a inherits from non-existent interface %a"
+                          IdlData.pp_qualified_name name IdlData.pp_qualified_name inh
                  end else
-                   failwith ("Interface " ^ BatString.join "::" name ^
-                             " mentioned in an implements clause does not exist!"))
+                   ContextError.error ctx "Interface %a on the LHS of an implements clause does not exist!"
+                     IdlData.pp_qualified_name name)
       ifinh;
     List.iter (fun (name, inh) -> if not (QNameMap.mem inh defs.exceptions) then
-                 failwith ("Exception " ^ BatString.join "::" name ^ " inherits from non-existent exception " ^
-                           BatString.join "::" inh ^ "!")) exinh;
+                 ContextError.error ctx "Exception %a inherits from non-existent exception %a"
+                   IdlData.pp_qualified_name name IdlData.pp_qualified_name inh)
+      exinh;
     List.iter (fun (name, inh) -> if not (QNameMap.mem inh defs.dictionaries) then
-                 failwith ("Dictionary " ^ BatString.join "::" name ^ " inherits from non-existent dictionary " ^
-                           BatString.join "::" inh ^ "!")) diinh;
+                 ContextError.error ctx "Dictionary %a inherits from non-existent dictionary %a"
+                   IdlData.pp_qualified_name name IdlData.pp_qualified_name inh)
+      diinh;
     begin if (DFS.has_cycle dep) then
-      failwith "Cyclic inheritance graph!"
+      ContextError.error ctx "Cyclic inheritance graph!"
     end;
+    ContextError.flush_errors_and_handle_failure ctx;
     dep
 
 
@@ -110,7 +114,9 @@ let merge_interface
 
 let flatten defs =
   let open Vertex in
-  let deps = build_dependencies_and_check_consistency defs in
+  let ctx = ContextError.ctx_top () in
+  let deps = build_dependencies_and_check_consistency ctx defs in
+  let flat =
     Top.fold
       (fun (parent, parent_type) defs ->
          match parent_type with
@@ -122,7 +128,11 @@ let flatten defs =
                in let merge = merge_interface data
                in G.fold_succ (fun (child, child_type) defs ->
                               if child_type <> Interface then
-                                failwith "Inconsistent dependency edge";
+                                ContextError.error ctx
+                                  "Inconsistent dependency edge from %a to %a (interface to %a)"
+                                  IdlData.pp_qualified_name parent
+                                  IdlData.pp_qualified_name child
+                                  Vertex.pp_vtype child_type;
                               if QNameMap.mem child defs.interfaces then
                                 { defs with interfaces =
                                     QNameMap.modify child merge defs.interfaces }
@@ -134,7 +144,11 @@ let flatten defs =
                let merge = merge_exception (QNameMap.find parent defs.exceptions)
                in G.fold_succ (fun (child, child_type) defs ->
                                  if child_type <> Exception then
-                                   failwith "Inconsistent dependency edge";
+                                   ContextError.error ctx
+                                     "Inconsistent dependency edge from %a to %a (exception to %a)"
+                                     IdlData.pp_qualified_name parent
+                                     IdlData.pp_qualified_name child
+                                     Vertex.pp_vtype child_type;
                                  { defs with exceptions =
                                      QNameMap.modify child merge defs.exceptions })
                     deps (parent, parent_type) defs
@@ -142,8 +156,13 @@ let flatten defs =
                let merge = merge_dictionary (QNameMap.find parent defs.dictionaries)
                in G.fold_succ (fun (child, child_type) defs ->
                                  if child_type <> Dictionary then
-                                   failwith "Inconsistent dependency edge";
+                                   ContextError.error ctx
+                                     "Inconsistent dependency edge from %a to %a (dictionary to %a)"
+                                     IdlData.pp_qualified_name parent
+                                     IdlData.pp_qualified_name child
+                                     Vertex.pp_vtype child_type;
                                  { defs with dictionaries =
                                      QNameMap.modify child merge defs.dictionaries })
                     deps (parent, parent_type) defs)
       deps defs
+  in ContextError.flush_errors_and_handle_failure ctx; flat
