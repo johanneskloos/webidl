@@ -1,7 +1,7 @@
 open IdlData
 (** Step 3: Flatten the inheritance and implmements hierarchy *)
 module Vertex = struct
-  type vtype = Interface | Dictionary | Exception [@@deriving ord, eq]
+  type vtype = Interface | Dictionary | Exception [@@deriving ord, eq, show]
   let vtype_hash = function Interface -> 0 | Dictionary -> 1 | Exception -> 2
   type t = qualified_name * vtype [@@deriving ord, eq]
   let hash ((str, vt): t) = 3 * Hashtbl.hash str + vtype_hash vt
