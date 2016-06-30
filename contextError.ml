@@ -62,8 +62,11 @@ let pp_ctx pp ctx =
   in vbox (list ~sep:cut pp_message) pp ctx.current_state.message_list
 
 let flush_errors ctx =
-  pp_ctx Format.err_formatter ctx;
-  ctx.current_state.message_list <- []
+  if ctx.current_state.message_list <> [] then begin
+    pp_ctx Format.err_formatter ctx;
+    Format.pp_print_flush Format.err_formatter ();
+    ctx.current_state.message_list <- []
+  end
 
 let flush_errors_and_handle_failure ctx =
   flush_errors ctx;
