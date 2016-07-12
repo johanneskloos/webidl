@@ -1,0 +1,7 @@
+#! /bin/bash
+
+opam switch 4.03.0
+eval $(opam config env)
+opam install batteries fmt menhir ocaml-protoc ocamlgraph \
+  ppx_deriving ppx_import 
+ocaml setup.ml -all
