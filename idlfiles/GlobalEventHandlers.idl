@@ -1,0 +1,116 @@
+/*
+ * Copyright (c) 2013, Opera Software ASA. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of Opera Software ASA nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+// https://html.spec.whatwg.org/#globaleventhandlers
+
+[
+    LegacyTreatAsPartialInterface,
+    NoInterfaceObject // Always used on target of 'implements'
+] interface GlobalEventHandlers {
+    [Blacklisted] attribute EventHandler onabort;
+    [Blacklisted] attribute EventHandler onblur;
+    [Blacklisted] attribute EventHandler oncancel;
+    [Blacklisted] attribute EventHandler oncanplay;
+    [Blacklisted] attribute EventHandler oncanplaythrough;
+    [Blacklisted] attribute EventHandler onchange;
+    [Blacklisted] attribute EventHandler onclick;
+    [Blacklisted] attribute EventHandler onclose;
+    [Blacklisted] attribute EventHandler oncontextmenu;
+    [Blacklisted] attribute EventHandler oncuechange;
+    [Blacklisted] attribute EventHandler ondblclick;
+    [Blacklisted] attribute EventHandler ondrag;
+    [Blacklisted] attribute EventHandler ondragend;
+    [Blacklisted] attribute EventHandler ondragenter;
+    //[Blacklisted] attribute EventHandler ondragexit;
+    [Blacklisted] attribute EventHandler ondragleave;
+    [Blacklisted] attribute EventHandler ondragover;
+    [Blacklisted] attribute EventHandler ondragstart;
+    [Blacklisted] attribute EventHandler ondrop;
+    [Blacklisted] attribute EventHandler ondurationchange;
+    [Blacklisted] attribute EventHandler onemptied;
+    [Blacklisted] attribute EventHandler onended;
+    // FIXME: onerror should be an OnErrorEventHandler.
+    [Blacklisted] attribute EventHandler onerror;
+    [Blacklisted] attribute EventHandler onfocus;
+    [Blacklisted] attribute EventHandler oninput;
+    [Blacklisted] attribute EventHandler oninvalid;
+    [Blacklisted] attribute EventHandler onkeydown;
+    [Blacklisted] attribute EventHandler onkeypress;
+    [Blacklisted] attribute EventHandler onkeyup;
+    [Blacklisted] attribute EventHandler onload;
+    [Blacklisted] attribute EventHandler onloadeddata;
+    [Blacklisted] attribute EventHandler onloadedmetadata;
+    [Blacklisted] attribute EventHandler onloadstart;
+    [Blacklisted] attribute EventHandler onmousedown;
+    [LenientThis, Blacklisted] attribute EventHandler onmouseenter;
+    [LenientThis, Blacklisted] attribute EventHandler onmouseleave;
+    [Blacklisted] attribute EventHandler onmousemove;
+    [Blacklisted] attribute EventHandler onmouseout;
+    [Blacklisted] attribute EventHandler onmouseover;
+    [Blacklisted] attribute EventHandler onmouseup;
+    [Blacklisted] attribute EventHandler onmousewheel;
+    [Blacklisted] attribute EventHandler onpause;
+    [Blacklisted] attribute EventHandler onplay;
+    [Blacklisted] attribute EventHandler onplaying;
+    [Blacklisted] attribute EventHandler onprogress;
+    [Blacklisted] attribute EventHandler onratechange;
+    [Blacklisted] attribute EventHandler onreset;
+    [Blacklisted] attribute EventHandler onresize;
+    [Blacklisted] attribute EventHandler onscroll;
+    [Blacklisted] attribute EventHandler onseeked;
+    [Blacklisted] attribute EventHandler onseeking;
+    [Blacklisted] attribute EventHandler onselect;
+    [Blacklisted] attribute EventHandler onshow;
+    //[Blacklisted] attribute EventHandler onsort;
+    [Blacklisted] attribute EventHandler onstalled;
+    [Blacklisted] attribute EventHandler onsubmit;
+    [Blacklisted] attribute EventHandler onsuspend;
+    [Blacklisted] attribute EventHandler ontimeupdate;
+    [Blacklisted] attribute EventHandler ontoggle;
+    [Blacklisted] attribute EventHandler onvolumechange;
+    [Blacklisted] attribute EventHandler onwaiting;
+
+    // Pointer Events
+    // https://w3c.github.io/pointerevents/#extensions-to-the-globaleventhandlers-interface
+    [RuntimeEnabled=PointerEvent, Blacklisted] attribute EventHandler onpointerdown;
+    [RuntimeEnabled=PointerEvent, Blacklisted] attribute EventHandler onpointermove;
+    [RuntimeEnabled=PointerEvent,Blacklisted] attribute EventHandler onpointerup;
+    [RuntimeEnabled=PointerEvent,Blacklisted] attribute EventHandler onpointercancel;
+    [RuntimeEnabled=PointerEvent,Blacklisted] attribute EventHandler onpointerover;
+    [RuntimeEnabled=PointerEvent,Blacklisted] attribute EventHandler onpointerout;
+    [RuntimeEnabled=PointerEvent,Blacklisted] attribute EventHandler onpointerenter;
+    [RuntimeEnabled=PointerEvent,Blacklisted] attribute EventHandler onpointerleave;
+
+    // Touch Events
+    // https://w3c.github.io/touch-events/#extensions-to-the-globaleventhandlers-interface
+    [RuntimeEnabled=Touch,Blacklisted] attribute EventHandler ontouchcancel;
+    [RuntimeEnabled=Touch,Blacklisted] attribute EventHandler ontouchend;
+    [RuntimeEnabled=Touch,Blacklisted] attribute EventHandler ontouchmove;
+    [RuntimeEnabled=Touch,Blacklisted] attribute EventHandler ontouchstart;
+};
