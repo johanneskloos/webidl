@@ -1,4 +1,4 @@
-module A = CalculateAccessibles.Blacklist
+module A = CalculateBlocking.Blacklist
 open TypeGraph
 
 let pp_vertex (pp: Format.formatter) = let open Fmt in function
