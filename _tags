@@ -1,3 +1,82 @@
 # OASIS_START
+# DO NOT EDIT (digest: e54ffe9a50c4ec042d2e373cedd62bd7)
+# Ignore VCS directories, you can use the same kind of rule outside
+# OASIS_START/STOP if you want to exclude directories that contains
+# useless stuff for the build process
+true: annot, bin_annot
+<**/.svn>: -traverse
+<**/.svn>: not_hygienic
+".bzr": -traverse
+".bzr": not_hygienic
+".hg": -traverse
+".hg": not_hygienic
+".git": -traverse
+".git": not_hygienic
+"_darcs": -traverse
+"_darcs": not_hygienic
+# Library webidl
+"webidl.cmxs": use_webidl
+# Executable testWebidl
+"testWebidl.byte": package(batteries)
+"testWebidl.byte": package(fmt)
+"testWebidl.byte": package(menhirLib)
+"testWebidl.byte": package(ocamlgraph)
+"testWebidl.byte": package(ppx_deriving.show)
+"testWebidl.byte": package(ppx_import)
+# Executable testLexer
+"testLexer.byte": package(fmt)
+"testLexer.byte": package(menhirLib)
+"testLexer.byte": package(ppx_deriving.show)
+"testLexer.byte": package(ppx_import)
+<*.ml{,i,y}>: package(ppx_deriving.show)
+# Executable testSimpleAst
+"testSimpleAst.byte": package(batteries)
+"testSimpleAst.byte": package(fmt)
+"testSimpleAst.byte": package(menhirLib)
+"testSimpleAst.byte": package(ocamlgraph)
+"testSimpleAst.byte": package(ppx_deriving.eq)
+"testSimpleAst.byte": package(ppx_deriving.ord)
+"testSimpleAst.byte": package(ppx_import)
+# Executable testParse
+"testParse.byte": package(batteries)
+"testParse.byte": package(fmt)
+"testParse.byte": package(menhirLib)
+"testParse.byte": package(ocamlgraph)
+"testParse.byte": package(ppx_deriving.eq)
+"testParse.byte": package(ppx_deriving.ord)
+"testParse.byte": package(ppx_import)
+# Executable testGraph
+"testGraph.byte": package(batteries)
+"testGraph.byte": package(fmt)
+"testGraph.byte": package(menhirLib)
+"testGraph.byte": package(ocamlgraph)
+"testGraph.byte": package(ppx_deriving.eq)
+"testGraph.byte": package(ppx_deriving.ord)
+"testGraph.byte": package(ppx_import)
+# Executable testCalculateBlocking
+"testCalculateBlocking.byte": package(batteries)
+"testCalculateBlocking.byte": package(fmt)
+"testCalculateBlocking.byte": package(menhirLib)
+"testCalculateBlocking.byte": package(ocamlgraph)
+"testCalculateBlocking.byte": package(ppx_deriving.eq)
+"testCalculateBlocking.byte": package(ppx_deriving.ord)
+"testCalculateBlocking.byte": package(ppx_import)
+# Executable blocklist
+"blocklist.byte": package(batteries)
+"blocklist.byte": package(fmt)
+"blocklist.byte": package(menhirLib)
+"blocklist.byte": package(ocaml-protoc)
+"blocklist.byte": package(ocamlgraph)
+"blocklist.byte": package(ppx_deriving.eq)
+"blocklist.byte": package(ppx_deriving.ord)
+"blocklist.byte": package(ppx_import)
+<*.ml{,i,y}>: package(batteries)
+<*.ml{,i,y}>: package(fmt)
+<*.ml{,i,y}>: package(menhirLib)
+<*.ml{,i,y}>: package(ocaml-protoc)
+<*.ml{,i,y}>: package(ocamlgraph)
+<*.ml{,i,y}>: package(ppx_deriving.eq)
+<*.ml{,i,y}>: package(ppx_deriving.ord)
+<*.ml{,i,y}>: package(ppx_import)
 # OASIS_STOP
 true: use_menhir, table

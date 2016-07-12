@@ -1,0 +1,16 @@
+# OASIS_START
+# DO NOT EDIT (digest: c5ef79feb8ecf6e46fd1ee4de4091571)
+Ast
+AstParse
+AstSimplify
+Flatten
+IdlData
+Webidl
+Idllexer
+Idlparser
+Misc
+IdlparserOutput
+ContextError
+TokenPrinter
+Parse
+# OASIS_STOP

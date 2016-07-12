@@ -1,0 +1,13 @@
+# OASIS_START
+# DO NOT EDIT (digest: d145de6e94f0085c62fd9caa4715c614)
+version = "0.1"
+description = "WebIDL parser and analyzer"
+requires =
+"ppx_import batteries ppx_deriving.ord ppx_deriving.eq ocamlgraph menhirLib batteries"
+archive(byte) = "webidl.cma"
+archive(byte, plugin) = "webidl.cma"
+archive(native) = "webidl.cmxa"
+archive(native, plugin) = "webidl.cmxs"
+exists_if = "webidl.cma"
+# OASIS_STOP
+
