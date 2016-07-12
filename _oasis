@@ -24,6 +24,8 @@ Executable "testWebidl"
   BuildTools: ocamlbuild
   MainIs:     testWebidl.ml
   Install:    false
+  Build$:     flag(tests)
+  CompiledObject: best
   BuildDepends: ppx_import, ppx_deriving.show, fmt, batteries, ocamlgraph, menhirLib
 
 Executable "testLexer"
@@ -31,6 +33,8 @@ Executable "testLexer"
   BuildTools: ocamlbuild
   MainIs:     testLexer.ml
   Install:    false
+  Build$:     flag(tests)
+  CompiledObject: best
   BuildDepends: ppx_import, ppx_deriving.show, fmt, menhirLib
 
 Executable "testSimpleAst"
@@ -38,6 +42,8 @@ Executable "testSimpleAst"
   BuildTools: ocamlbuild
   MainIs:     testSimpleAst.ml
   Install:    false
+  Build$:     flag(tests)
+  CompiledObject: best
   BuildDepends: ppx_import, batteries, ppx_deriving.ord, ppx_deriving.eq,
         ocamlgraph, menhirLib, batteries, fmt
 
@@ -46,6 +52,8 @@ Executable "testParse"
   BuildTools: ocamlbuild
   MainIs:     testParse.ml
   Install:    false
+  Build$:     flag(tests)
+  CompiledObject: best
   BuildDepends: ppx_import, batteries, ppx_deriving.ord, ppx_deriving.eq,
         ocamlgraph, menhirLib, batteries, fmt
 
@@ -54,6 +62,8 @@ Executable "testGraph"
   BuildTools: ocamlbuild
   MainIs:     testGraph.ml
   Install:    false
+  Build$:     flag(tests)
+  CompiledObject: best
   BuildDepends: ppx_import, batteries, ppx_deriving.ord, ppx_deriving.eq,
         ocamlgraph, menhirLib, batteries, fmt
 
@@ -62,6 +72,7 @@ Executable "testCalculateBlocking"
   BuildTools: ocamlbuild
   MainIs:     testCalculateBlocking.ml
   Install:    false
+  CompiledObject: best
   BuildDepends: ppx_import, batteries, ppx_deriving.ord, ppx_deriving.eq,
         ocamlgraph, menhirLib, batteries, fmt
 
@@ -70,6 +81,7 @@ Executable "blocklist"
   BuildTools: ocamlbuild
   MainIs:     blocklist.ml
   Install:    false
+  CompiledObject: best
   BuildDepends: ppx_import, batteries, ppx_deriving.ord, ppx_deriving.eq,
         ocamlgraph, menhirLib, batteries, fmt, ocaml-protoc
 
