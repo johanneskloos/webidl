@@ -5,36 +5,91 @@ module Vertex = struct
   let hash (x: t) = Hashtbl.hash x
 end
 module Edge = struct
-  type t = Attribute | Result [@@deriving ord]
-  let default = Attribute
+  type edgetype = Attribute of string | Result of string [@@deriving ord]
+  type edgemark = Good | Nondeterministic | Blacklisted [@@deriving ord]
+  type t = edgetype * edgemark [@@deriving ord]
+  let default = (Attribute "(bad)", Blacklisted)
 end
 open Vertex
-module G = Graph.Imperative.Digraph.ConcreteBidirectionalLabeled(Vertex)(Edge)
+module G = Graph.Persistent.Digraph.ConcreteBidirectionalLabeled(Vertex)(Edge)
 
-let rec extract_typenames = function
-  | NamedType t -> [t]
-  | UnionType l -> List.flatten (List.map extract_typenames l)
-  | ArrayType t -> extract_typenames t
-  | OptionType (_, t) -> extract_typenames t
-  | NullableType t -> extract_typenames t
-  | SequenceType t -> extract_typenames t
-  | _ -> []
-let attribute_edges name g types =
-  List.iter (fun typename -> G.add_edge_e g (name, Edge.Attribute, Instance typename))
-    (extract_typenames types)
-let operation_edges name g types =
-  List.iter (fun typename -> G.add_edge_e g (name, Edge.Result, Instance typename))
-    (extract_typenames types)
+let rec fold_typenames f t x = match t with
+  | NamedType t -> f x t
+  | UnionType l -> List.fold_left (fun x t -> fold_typenames f t x) x l
+  | ArrayType t -> fold_typenames f t x
+  | OptionType (_, t) -> fold_typenames f t x
+  | NullableType t -> fold_typenames f t x
+  | SequenceType t -> fold_typenames f t x
+  | _ -> x
 
-let accessor_edges name g { getter; setter; creator; deleter } =
-  BatOption.may (function ({ types }: attributed_type) -> operation_edges name g types)
-    getter;
-  BatOption.may (function ({ types }: attributed_type) -> operation_edges name g types)
-    deleter;
-  BatOption.may (function (({ types }: attributed_type), _) -> operation_edges name g types)
-    setter;
-  BatOption.may (function (({ types }: attributed_type), _) -> operation_edges name g types)
-    creator
+let add_edge g from edgetype user_attributes typename =
+  let edgemark =
+    List.fold_left (fun mode -> function
+                      | IdlData.UAPlain "Blacklisted"
+                      | IdlData.UAPlain "ToplevelBlacklisted" ->
+                          Edge.Blacklisted
+                      | IdlData.UAPlain "Nondeterministic" ->
+                          if mode <> Edge.Blacklisted then
+                            Edge.Nondeterministic
+                          else
+                            mode
+                      | _ -> mode)
+      Edge.Good user_attributes
+  in
+  G.add_edge_e g (from, (edgetype, edgemark), Instance typename)
+
+let attribute_edges name aname user_attributes types =
+  fold_typenames (fun g -> add_edge g name (Edge.Attribute aname) user_attributes) types
+
+let operation_edges name aname user_attributes types =
+  fold_typenames (fun g -> add_edge g name (Edge.Result aname) user_attributes) types
+
+let apply_map f x = BatOption.apply (BatOption.map f x)
+
+let accessor_edges src prefix { getter; setter; creator; deleter } g =
+  let add prefix ({ types; user_attributes }: attributed_type) =
+    operation_edges src prefix user_attributes types
+  in let add' prefix (ty, _) g = add prefix ty g
+  in g |>
+       apply_map (add "getter") getter |>
+       apply_map (add "deleter") deleter |>
+       apply_map (add' "setter") setter |>
+       apply_map (add' "creator") creator
+
+let dictionary_reachability_graph name ({ members }: dictionary) g =
+  List.fold_left
+    (fun g ({ name = aname; types; user_attributes }: dictionary_entry) ->
+       attribute_edges (Instance name) aname user_attributes types g)
+    g members
+
+let interface_reachability_graph
+      name { consts; attributes; operations; static_operations;
+             constructors; named_properties; indexed_properties;
+             legacy_callers; not_exposed } g =
+  let fold f l x = List.fold_left (fun a b -> f b a) x l
+  and namei = Instance name and namec = Class name in
+    g |>
+      fold (fun ({ name; types; user_attributes }: constant) ->
+              attribute_edges namec name user_attributes types) consts |>
+      fold (fun ({ name; types; user_attributes }: attribute) ->
+              attribute_edges namei name user_attributes types) attributes |>
+      fold (fun ({ name; return; user_attributes }: operation) ->
+              operation_edges namec name user_attributes return) static_operations |>
+      fold (fun ({ name; return; user_attributes }: operation) ->
+              operation_edges namei name user_attributes return) operations |>
+      fold (fun ({ user_attributes }: constructor) g ->
+              add_edge g Global (Edge.Result "(constructor)") user_attributes name) constructors |>
+      accessor_edges namei "indexed" indexed_properties |>
+      accessor_edges namei "named" named_properties |>
+      fold (fun ({ return; user_attributes }: legacy_caller) ->
+              operation_edges namei "(legacy)" user_attributes return) legacy_callers |>
+      fun g ->
+        if not_exposed then
+          g
+        else
+          add_edge g Global (Edge.Result "(class instance)") [] name
+
+
 
 let build_reachability_graph defs =
   (* Ignore exception-based control flow; just check if
@@ -43,144 +98,10 @@ let build_reachability_graph defs =
    * Enumerations don't have non-string values and are harmless.
    * This leaves dictionaries and interfaces.
   *)
-  let g = G.create () in
-  QNameMap.iter (fun name ({ members }: dictionary) ->
-      List.iter (fun ({ types }: dictionary_entry) ->
-          attribute_edges (Instance name) g types)
-        members)
-    defs.dictionaries;
-  QNameMap.iter
-    (fun name { consts; attributes; operations; static_operations;
-                constructors; named_properties; indexed_properties;
-                legacy_callers; not_exposed } ->
-       let namei = Instance name and namec = Class name in
-       List.iter (fun ({ types }: constant) -> attribute_edges namec g types)
-         consts;
-       List.iter (fun ({ types }: attribute) -> attribute_edges namei g types)
-         attributes;
-       List.iter (fun ({ return }: operation) -> operation_edges namei g return)
-         operations;
-       List.iter (fun ({ return }: operation) -> operation_edges namec g return)
-         static_operations;
-       List.iter (fun _ -> G.add_edge_e g (Global, Edge.Attribute, namei))
-         constructors;
-       accessor_edges namei g named_properties;
-       accessor_edges namei g indexed_properties;
-       List.iter (fun ({ return }: legacy_caller) -> operation_edges namei g return)
-         legacy_callers;
-       if not not_exposed then G.add_edge g Global namec
-    )
-    defs.interfaces;
-  G.add_edge_e g (Global, Edge.Attribute, Instance ["window"]);
-  G.add_edge_e g (Global, Edge.Attribute, Instance ["document"]);
-  g
-
-let calculate_class_members p defs =
-  let pred = List.exists p
-  in let listpred getattr l = List.exists (fun x -> pred (getattr x)) l
-  and attributed_type_pred_1: attributed_type option -> bool = function
-    | Some { user_attributes } -> pred user_attributes
-    | None -> false
-  and attributed_type_pred_2:
-                (attributed_type * attributed_type) option -> bool = function
-    | Some (_, { user_attributes }) -> pred user_attributes
-    | None -> false
-  in let accessor_pred { getter; setter; creator; deleter } =
-    attributed_type_pred_1 getter
-      || attributed_type_pred_2 setter
-      || attributed_type_pred_2 creator
-      || attributed_type_pred_1 deleter
-  in QNameMap.fold
-       (fun name ({ members }: dictionary) class_members ->
-          if listpred (fun (x: dictionary_entry) -> x.user_attributes) members then
-            Vertex.Instance name :: class_members
-          else
-            class_members)
-       defs.dictionaries []
-    |> QNameMap.fold
-       (fun name ({ consts; attributes; operations; static_operations;
-                    constructors; named_properties; indexed_properties;
-                    legacy_callers }) class_members ->
-          let add_instance =
-            listpred (fun (x: constant) -> x.user_attributes) consts
-            || listpred (fun (x: attribute) -> x.user_attributes) attributes
-            || listpred (fun (x: operation) -> x.user_attributes) operations
-            || accessor_pred named_properties
-            || accessor_pred indexed_properties
-            || listpred (fun (x: legacy_caller) -> x.user_attributes) legacy_callers
-          and add_class =
-            listpred (fun (x: operation) -> x.user_attributes) static_operations
-              || listpred (fun (x: constructor) -> x.user_attributes) constructors
-          in match add_instance, add_class with
-            | true, true ->
-                Vertex.Instance name :: Vertex.Class name :: class_members
-            | true, false ->
-                Vertex.Instance name :: class_members
-            | false, true ->
-                Vertex.Class name :: class_members
-            | false, false -> class_members)
-       defs.interfaces
-
-let calculate_blacklisted =
-  calculate_class_members (function IdlData.UAPlain "Blacklisted" -> true | _ -> false)
-
-let calculate_nondeterministic =
-  calculate_class_members (function IdlData.UAPlain "Nondeterministic" -> true | _ -> false)
-
-module AccessibleAnalysis = struct
-  type edge = G.edge
-  type vertex = G.vertex
-  type data = bool
-  type g = G.t
-  let direction = Graph.Fixpoint.Forward
-  let join = (||)
-  let equal: data -> data -> bool = (=)
-  let analyze (_, mode, _) data = if mode = Edge.Attribute then data else false
-end
-module Accessible = Graph.Fixpoint.Make(G)(AccessibleAnalysis)
-
-let calculate_accessibles (g: G.t): Vertex.t -> bool =
-  Accessible.analyze (fun v -> v = Vertex.Global) g
-
-module MarkingAnalysis = struct
-  type edge = G.edge
-  type vertex = G.vertex
-  type mode = Neither | Nondeterministic | Blacklisted
-  type data = mode * bool
-  type g = G.t
-
-  let direction = Graph.Fixpoint.Backward
-  let equal: data -> data -> bool = (=)
-
-  let join_mode m1 m2 = match m1, m2 with
-    | Neither, m -> m
-    | m, Neither -> m
-    | Nondeterministic, Nondeterministic -> Nondeterministic
-    | Blacklisted, _ -> Blacklisted
-    | _, Blacklisted -> Blacklisted
-  let join (m1, r1) (m2, r2) = (join_mode m1 m2, r1 || r2)
-
-  let analyze (_, _, tgt) (m, r) =
-    if r then (Neither, true) else (m, false)
-end
-module Marking = Graph.Fixpoint.Make(G)(MarkingAnalysis)
-
-let calculate_marking (g: G.t) blacklisted nonderministic:
-      Vertex.t -> MarkingAnalysis.data =
-  let acc = calculate_accessibles g
-  and mode v =
-    if List.mem v blacklisted then
-      MarkingAnalysis.Blacklisted
-    else if List.mem v nonderministic then
-      MarkingAnalysis.Nondeterministic
-    else
-      MarkingAnalysis.Neither
-  in Marking.analyze (fun v -> (mode v, acc v)) g
+  G.empty |>
+    QNameMap.fold dictionary_reachability_graph defs.dictionaries |>
+    QNameMap.fold interface_reachability_graph defs.interfaces |>
+    fun g -> add_edge g Global (Edge.Attribute "window") [] ["Window"] |>
+    fun g -> add_edge g Global (Edge.Attribute "document") [] ["Document"]
 
 
-let mark defs =
-  let blacklisted = calculate_blacklisted defs
-  and nondeterministic = calculate_nondeterministic defs
-  and g = build_reachability_graph defs
-  in let marking = calculate_marking g blacklisted nondeterministic
-  in G.fold_vertex (fun v res -> (v, marking v) :: res) g []
