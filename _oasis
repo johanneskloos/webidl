@@ -5,7 +5,7 @@ Synopsis:    WebIDL parser and analyzer
 Authors:     Johannes Kloos
 License:     Apache
 Plugins:     META (0.4)
-OCamlVersion: >= 4.02.1
+OCamlVersion: >= 4.03.0
 AlphaFeatures: no_automatic_syntax
 
 Library "webidl"
