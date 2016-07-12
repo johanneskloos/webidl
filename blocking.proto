@@ -1,0 +1,11 @@
+package blocking;
+
+message Path {
+  required string attribute = 1;
+  repeated string path = 2;
+}
+
+message Blocking {
+  repeated Path blacklisted = 1;
+  repeated Path nondeterministic = 2;
+}

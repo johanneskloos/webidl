@@ -28,5 +28,8 @@ setup.ml
 idlparserOutput.ml
 *.conflicts
 
+# ocaml-protoc generated files
+blocking_pb.*
+
 # Editor backup files
 *~
