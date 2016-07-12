@@ -51,16 +51,21 @@ let accessor_edges src prefix { getter; setter; creator; deleter } g =
     operation_edges src prefix user_attributes types
   in let add' prefix (ty, _) g = add prefix ty g
   in g |>
-       apply_map (add "getter") getter |>
-       apply_map (add "deleter") deleter |>
-       apply_map (add' "setter") setter |>
-       apply_map (add' "creator") creator
+       apply_map (add "(getter)") getter |>
+       apply_map (add "(deleter)") deleter |>
+       apply_map (add' "(setter)") setter |>
+       apply_map (add' "(creator)") creator
 
 let dictionary_reachability_graph name ({ members }: dictionary) g =
   List.fold_left
     (fun g ({ name = aname; types; user_attributes }: dictionary_entry) ->
        attribute_edges (Instance name) aname user_attributes types g)
     g members
+
+let rec last = function
+  | [] -> raise Not_found
+  | [x] -> x
+  | _ :: l -> last l
 
 let interface_reachability_graph
       name { consts; attributes; operations; static_operations;
@@ -77,8 +82,8 @@ let interface_reachability_graph
               operation_edges namec name user_attributes return) static_operations |>
       fold (fun ({ name; return; user_attributes }: operation) ->
               operation_edges namei name user_attributes return) operations |>
-      fold (fun ({ user_attributes }: constructor) g ->
-              add_edge g Global (Edge.Result "(constructor)") user_attributes name) constructors |>
+      fold (fun ({ name = cname; user_attributes }: constructor) ->
+              operation_edges Global (last cname) user_attributes (NamedType name)) constructors |>
       accessor_edges namei "indexed" indexed_properties |>
       accessor_edges namei "named" named_properties |>
       fold (fun ({ return; user_attributes }: legacy_caller) ->
@@ -87,7 +92,7 @@ let interface_reachability_graph
         if not_exposed then
           g
         else
-          add_edge g Global (Edge.Result "(class instance)") [] name
+          add_edge g Global (Edge.Result (last name)) [] name
 
 
 
